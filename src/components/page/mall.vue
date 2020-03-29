@@ -52,7 +52,7 @@ const WooCommerce = new WooCommerceRestApi({
 })
 export default {
   name: 'mall',
-  data () {
+  data() {
     return {
       swiperOption: {
         slidesPerView: 3
@@ -80,7 +80,7 @@ export default {
       products: []
     }
   },
-  created: function () {
+  created: function() {
     WooCommerce.get('products?per_page=50')
       .then(response => {
         console.log(response.data)
@@ -121,11 +121,11 @@ export default {
   border-bottom: 1px solid #eee;
   color: #74c774;
 }
-.recommend-body{
+.recommend-body {
   border-bottom: 1px solid #eee;
 }
-.recommend-item{
-  width:99%;
+.recommend-item {
+  width: 99%;
   border-right: 1px solid #fff;
   text-align: center;
   font-size: 0.5rem;
