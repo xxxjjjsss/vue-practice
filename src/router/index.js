@@ -6,7 +6,7 @@ import Home from '../components/admin/home'
 
 Vue.use(Router)
 
-export default new Router({
+const router = new Router({
   routes: [{
     path: '/',
     name: 'mall',
@@ -21,3 +21,12 @@ export default new Router({
     component: Home
   }]
 })
+
+router.beforeEach((to, before, next) => {
+  if (to.path === '/login') return next()
+  const tokenstr = window.sessionStorage.getItem('token')
+  if (!tokenstr) return next('/login')
+  next()
+})
+
+export default router
