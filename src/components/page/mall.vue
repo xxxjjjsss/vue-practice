@@ -52,7 +52,7 @@ const WooCommerce = new WooCommerceRestApi({
 })
 export default {
   name: 'mall',
-  data() {
+  data () {
     return {
       swiperOption: {
         slidesPerView: 3
@@ -80,7 +80,7 @@ export default {
       products: []
     }
   },
-  created: function() {
+  created: function () {
     WooCommerce.get('products?per_page=50')
       .then(response => {
         console.log(response.data)
@@ -93,7 +93,7 @@ export default {
 }
 </script>
 
-<style>
+<style lang="less" scoped>
 .row {
   text-align: center;
 }

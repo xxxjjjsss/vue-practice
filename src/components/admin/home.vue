@@ -11,7 +11,7 @@
       <el-container>
         <el-aside :width="iscollapse ? '64px':'200px'">
           <el-menu
-            default-active="2"
+            :default-active="activepPath"
             class="el-menu-vertical-demo"
             @open="handleOpen"
             @close="handleClose"
@@ -21,6 +21,7 @@
             unique-opened
             :collapse="iscollapse"
             :collapse-transition="false"
+            router
           >
             <div class="toggle-button" @click="toggle">|||</div>
             <el-submenu index="1">
@@ -28,7 +29,7 @@
                 <span>用户管理</span>
               </template>
               <el-menu-item-group>
-                <el-menu-item index="1-1">选项1</el-menu-item>
+                <el-menu-item index="/user" @click="saveState( '/user')">选项1</el-menu-item>
               </el-menu-item-group>
             </el-submenu>
             <el-submenu index="2">
@@ -75,20 +76,28 @@
 
 <script>
 export default {
-  data () {
+  data() {
     return {
-      iscollapse: false
+      iscollapse: false,
+      activepPath: ''
     }
   },
+  created() {
+    this.activepPath = window.sessionStorage.getItem('activepPath')
+  },
   methods: {
-    logout () {
+    logout() {
       window.sessionStorage.clear()
       this.$router.push('/login')
     },
-    handleOpen () {},
-    handleClose () {},
-    toggle () {
+    handleOpen() {},
+    handleClose() {},
+    toggle() {
       this.iscollapse = !this.iscollapse
+    },
+    saveState(activepPath) {
+      window.sessionStorage.setItem('activepPath', activepPath)
+      this.activepPath = activepPath
     }
   }
 }
@@ -133,7 +142,7 @@ export default {
   background-color: #fff;
   color: #eee;
   text-align: center;
-  line-height: 160px;
+  line-height: 16px;
 }
 
 body > .el-container {

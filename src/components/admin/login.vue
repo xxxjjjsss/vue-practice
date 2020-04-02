@@ -31,7 +31,7 @@
 import '../css/global.css'
 export default {
   name: 'login',
-  data () {
+  data() {
     return {
       login_form: {
         username: 'admin',
@@ -44,17 +44,19 @@ export default {
     }
   },
   methods: {
-    onSubmit () {
+    onSubmit() {
       console.log('submit!')
     },
-    resetLoginForm () {
+    resetLoginForm() {
       this.$refs.loginFormRef.resetFields()
     },
-    login () {
+    login() {
       this.$refs.loginFormRef.validate(async valid => {
         let { status: res } = await this.$http.post('token', this.login_form)
         let result = await this.$http.post('token', this.login_form)
-        if (res === 200) { this.$message.success('登陆成功') }
+        if (res === 200) {
+          this.$message.success('登陆成功')
+        }
         window.sessionStorage.setItem('token', result.data.token)
         this.$router.push('/home')
       })
