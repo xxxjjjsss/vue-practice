@@ -12,9 +12,13 @@
     "build": "node build/build.js"
   },
   "dependencies": {
+    "crypto-js": "^4.0.0",
     "element-ui": "^2.13.0",
+    "jquery": "^3.4.1",
     "less": "^3.11.1",
     "less-loader": "^5.0.0",
+    "oauth": "^0.9.15",
+    "request": "^2.88.2",
     "swiper": "^5.3.6",
     "vant": "^2.5.5",
     "vue": "^2.6.11",

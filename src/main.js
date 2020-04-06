@@ -24,7 +24,6 @@ import {
 
 axios.defaults.baseURL = 'https://healthkiwi.co.nz/wp-json/jwt-auth/v1/'
 axios.interceptors.request.use(config => {
-  console.log(config)
   // config.headers.Authorization = window.sessionStorage.getItem('token')
   return config
 })
