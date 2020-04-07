@@ -64,10 +64,7 @@ const WooCommerce = new WooCommerceRestApi({
 export default {
   data() {
     return {
-      subscriberList: [],
-      subscribertotal: 0,
-      eggList: [],
-      eggtotal: 0,
+      usertotal: 0,
       userList: [],
       queryInfo: {
         query: '',
@@ -77,47 +74,46 @@ export default {
     }
   },
   methods: {
-    async getOrders() {
-      WooCommerce.getAsync('products/categories').then(result => {
-        console.log(result.toJSON().body)
-        this.WooCommerceResult = result.toJSON().body
+    getAjax1() {
+      return new Promise((resolve, reject) => {
+        WooCommerce.get('customers?role=subscriber')
+          .then(result => {
+            this.subscriberList = result.data
+            this.subscribertotal = result.data.length
+            resolve(result.data)
+          })
+          .catch(error => {
+            console.log(error.subscriber.data)
+          })
       })
-      const egg = await WooCommerce.getAsync('customers?role=um_egg').then(
-        function(result) {
-          return JSON.parse(result.toJSON().body)
-        }
-      )
-      console.log(egg)
     },
-    async getUserList() {
-      var { result: subscriber } = await WooCommerce.get(
-        'customers?role=subscriber'
-      )
-        .then(result => {
-          this.subscriberList = subscriber.data
-          this.subscribertotal = subscriber.data.length
-          console.log(this.subscriberList)
-        })
-        .catch(error => {
-          console.log(error.subscriber.data)
-        })
-      var subscriberlist = JSON.parse(subscriber.toJSON().body)
-      var { result: egg } = await WooCommerce.get('customers?role=um_egg')
-        .then(result => {
-          this.eggList = result.data
-          this.eggtotal = result.data.length
-          console.log(this.eggList)
-        })
-        .catch(error => {
-          console.log(error.um_egg.data)
-        })
-      var egglist = JSON.parse(egg.toJSON().body)
-      console.log(subscriberlist.concat(egglist))
+    getAjax2() {
+      return new Promise((resolve, reject) => {
+        WooCommerce.get('customers?role=um_egg')
+          .then(result => {
+            this.eggList = result.data
+            this.eggtotal = result.data.length
+            resolve(result.data)
+            console.log(this.eggList)
+          })
+          .catch(error => {
+            console.log(error.um_egg.data)
+          })
+      })
+    },
+    getUserList() {
+      let p1 = this.getAjax1()
+      let p2 = this.getAjax2()
+      Promise.all([p1, p2]).then(dataArray => {
+        this.userList = dataArray.flat()
+        this.usertotal = dataArray.flat().length
+        console.log(dataArray.flat())
+      })
     }
   },
+
   created: function() {
     this.getUserList()
-    this.getOrders()
   }
 }
 </script>
