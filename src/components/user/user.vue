@@ -78,8 +78,6 @@ export default {
       return new Promise((resolve, reject) => {
         WooCommerce.get('customers?role=subscriber')
           .then(result => {
-            this.subscriberList = result.data
-            this.subscribertotal = result.data.length
             resolve(result.data)
           })
           .catch(error => {
@@ -91,10 +89,7 @@ export default {
       return new Promise((resolve, reject) => {
         WooCommerce.get('customers?role=um_egg')
           .then(result => {
-            this.eggList = result.data
-            this.eggtotal = result.data.length
             resolve(result.data)
-            console.log(this.eggList)
           })
           .catch(error => {
             console.log(error.um_egg.data)
@@ -107,7 +102,7 @@ export default {
       Promise.all([p1, p2]).then(dataArray => {
         this.userList = dataArray.flat()
         this.usertotal = dataArray.flat().length
-        console.log(dataArray.flat())
+        console.log(dataArray.flat().length)
       })
     }
   },
