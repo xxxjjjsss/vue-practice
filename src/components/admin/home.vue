@@ -29,7 +29,7 @@
                 <span>用户管理</span>
               </template>
               <el-menu-item-group>
-                <el-menu-item index="/user" @click="saveState( '/user')">选项1</el-menu-item>
+                <el-menu-item index="/user" @click="saveState( '/user')">用户列表</el-menu-item>
               </el-menu-item-group>
             </el-submenu>
             <el-submenu index="2">
