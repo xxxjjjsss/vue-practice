@@ -5,6 +5,7 @@ import Mall from '../components/page/mall'
 import Home from '../components/admin/home'
 import Welcome from '../components/admin/welcome'
 import Users from '../components/user/user'
+import Authority from '../../src/authority/authority list'
 
 Vue.use(Router)
 
@@ -28,6 +29,9 @@ const router = new Router({
     }, {
       path: '/user',
       component: Users
+    }, {
+      path: '/authoritylist',
+      component: Authority
     }]
   }]
 })
