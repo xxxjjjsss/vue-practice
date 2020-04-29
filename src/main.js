@@ -3,8 +3,12 @@ import App from './App'
 import router from './router'
 import VueAwesomeSwiper from 'vue-awesome-swiper'
 import '../node_modules/swiper/css/swiper.css'
-import ElementUI, { Message } from 'element-ui'
+import ElementUI, {
+  Message
+} from 'element-ui'
 import 'element-ui/lib/theme-chalk/index.css'
+
+import common from './common.js'
 
 /*
 import Vant from 'vant'
@@ -22,29 +26,37 @@ import {
   Lazyload
 } from 'vant'
 
-axios.defaults.baseURL = 'https://healthkiwi.co.nz/wp-json/jwt-auth/v1/'
+// axios.defaults.baseURL = 'https://healthkiwi.co.nz/wp-json/jwt-auth/v1/'
 axios.interceptors.request.use(config => {
   // config.headers.Authorization = window.sessionStorage.getItem('token')
   return config
 })
-Vue.prototype.$http = axios
-Vue.use(Button).use(Row).use(Col).use(Swipe).use(SwipeItem).use(Lazyload).use(VueAwesomeSwiper)
+// Vue.prototype.$http = axios
+Vue.use(Button).use(Row).use(Col).use(Swipe).use(SwipeItem).use(Lazyload).use(VueAwesomeSwiper).use(common)
 Vue.config.productionTip = false
 Vue.use(ElementUI)
 Vue.prototype.$message = Message
 axios.interceptors.response.use(data => {
   if (data.status && data.status === 200 && data.data.status === 'error') {
-    Message.error({ message: data.data.msg })
+    Message.error({
+      message: data.data.msg
+    })
     return
   }
   return data
 }, err => {
   if (err.response.status === 504 || err.response.status === 404) {
-    Message.error({ message: '服务器被吃了⊙﹏⊙∥' })
+    Message.error({
+      message: '服务器被吃了⊙﹏⊙∥'
+    })
   } else if (err.response.status === 403) {
-    Message.error({ message: '用户名或密码错误，请重试' })
+    Message.error({
+      message: '用户名或密码错误，请重试'
+    })
   } else {
-    Message.error({ message: '未知错误!' })
+    Message.error({
+      message: '未知错误!'
+    })
   }
   return Promise.resolve(err)
 })

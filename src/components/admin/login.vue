@@ -52,12 +52,16 @@ export default {
     },
     login() {
       this.$refs.loginFormRef.validate(async valid => {
-        let { status: res } = await this.$http.post('token', this.login_form)
-        let result = await this.$http.post('token', this.login_form)
+        let { status: res } = await this.$reqWooService(
+          'token',
+          this.login_form,
+          'post'
+        )
+        let result = await this.$reqWooService('token', this.login_form, 'post')
         if (res === 200) {
           this.$message.success('登陆成功')
         }
-        window.sessionStorage.setItem('token', result.data.token)
+        window.sessionStorage.setItem('token', result.token)
         this.$router.push('/home')
       })
     }
