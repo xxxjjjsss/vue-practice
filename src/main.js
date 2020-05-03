@@ -7,7 +7,6 @@ import ElementUI, {
   Message
 } from 'element-ui'
 import 'element-ui/lib/theme-chalk/index.css'
-
 import common from './common.js'
 
 /*
@@ -25,7 +24,8 @@ import {
   SwipeItem,
   Lazyload
 } from 'vant'
-
+import echarts from 'echarts'
+Vue.prototype.$echarts = echarts
 // axios.defaults.baseURL = 'https://healthkiwi.co.nz/wp-json/jwt-auth/v1/'
 axios.interceptors.request.use(config => {
   // config.headers.Authorization = window.sessionStorage.getItem('token')

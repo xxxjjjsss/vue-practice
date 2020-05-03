@@ -3,8 +3,7 @@ import {
 } from './utls.js'
 import Axios from 'axios'
 Axios.defaults.baseWooURL = domain.Base_WOO_URL
-Axios.defaults.baseCin7URL = process.env.BASE_API
-console.log(process.env.BASE_API)
+Axios.defaults.baseCin7URL = domain.Base_CI7_URL
 Axios.defaults.timeout = 180000
 // 2->对请求传递过来的参数处理
 function paramsToUrl(url, params) {

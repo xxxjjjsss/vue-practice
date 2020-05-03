@@ -61,7 +61,7 @@
                 <span>数据统计</span>
               </template>
               <el-menu-item-group>
-                <el-menu-item index="1-1">数据统计</el-menu-item>
+                <el-menu-item index="statistics">数据统计</el-menu-item>
               </el-menu-item-group>
             </el-submenu>
           </el-menu>

@@ -18,11 +18,7 @@
             clearable
             @clear="clear"
           >
-            <el-button
-              slot="append"
-              icon="el-icon-search"
-              @click="search"
-            ></el-button>
+            <el-button slot="append" icon="el-icon-search" @click="search"></el-button>
           </el-input>
         </el-col>
         <el-col :span="4">
@@ -36,8 +32,7 @@
                 :command="index"
                 v-for="(userRole, index) in userRole"
                 :key="index"
-              >{{userRole}}
-              </el-dropdown-item>
+              >{{userRole}}</el-dropdown-item>
             </el-dropdown-menu>
           </el-dropdown>
         </el-col>
@@ -46,67 +41,31 @@
         </el-col>
       </el-row>
       <template>
-        <el-table
-          :data="userList"
-          style="width: 100%"
-        >
-          <el-table-column
-            prop="date_created"
-            label="日期"
-            width="180"
-          >
-          </el-table-column>
-          <el-table-column
-            prop="username"
-            label="姓名"
-            width="180"
-          >
-          </el-table-column>
-          <el-table-column
-            prop="email"
-            label="邮箱"
-          ></el-table-column>
-          <el-table-column
-            prop="role"
-            label="角色"
-          ></el-table-column>
-          <el-table-column
-            prop="id"
-            label="ID"
-            width="40"
-          ></el-table-column>
-          <el-table-column
-            prop
-            label="操作"
-            width="240"
-          >
+        <el-table :data="userList" style="width: 100%">
+          <el-table-column prop="date_created" label="日期" width="180"></el-table-column>
+          <el-table-column prop="username" label="姓名" width="180"></el-table-column>
+          <el-table-column prop="email" label="邮箱"></el-table-column>
+          <el-table-column prop="role" label="角色"></el-table-column>
+          <el-table-column prop="id" label="ID" width="40"></el-table-column>
+          <el-table-column prop label="操作" width="240">
             <template slot-scope="scope">
               <el-button
                 type="primary"
                 icon="el-icon-edit"
                 size="mini"
                 @click="showEditDialoge(scope.row.id)"
-              >修改密码
-              </el-button>
+              >修改密码</el-button>
               <el-button
                 type="danger"
                 icon="el-icon-delete"
                 size="mini"
                 @click="deleteUser(scope.row.id)"
-              >删除
-              </el-button>
+              >删除</el-button>
             </template>
           </el-table-column>
-          <el-table-column
-            prop="is_paying_customer"
-            label="是否消费"
-          >
+          <el-table-column prop="is_paying_customer" label="是否消费">
             <template slot-scope="scope">
-              <el-switch
-                v-model="scope.row.is_paying_customer"
-                disabled
-              >
-              </el-switch>
+              <el-switch v-model="scope.row.is_paying_customer" disabled></el-switch>
             </template>
           </el-table-column>
         </el-table>
@@ -120,65 +79,28 @@
         :page-size="queryInfo.pagesize"
         layout="total, sizes, prev, pager, next, jumper"
         :total="userTotal"
-      >
-      </el-pagination>
+      ></el-pagination>
     </el-card>
-    <el-dialog
-      title="请输入用户信息"
-      :visible.sync="dialogVisible"
-      width="50%"
-      @close="addDialogClose"
-    >
+    <el-dialog title="请输入用户信息" :visible.sync="dialogVisible" width="50%" @close="addDialogClose">
       <span>
-        <el-form
-          :model="addUserForm"
-          :rules="rules"
-          ref="addUserFormRef"
-          label-width="100px"
-        >
-          <el-form-item
-            label="email"
-            prop="email"
-          >
+        <el-form :model="addUserForm" :rules="rules" ref="addUserFormRef" label-width="100px">
+          <el-form-item label="email" prop="email">
             <el-input v-model="addUserForm.email"></el-input>
           </el-form-item>
-          <el-form-item
-            label="用户名"
-            prop="username"
-          >
+          <el-form-item label="用户名" prop="username">
             <el-input v-model="addUserForm.username"></el-input>
           </el-form-item>
-          <el-form-item
-            label="密码"
-            prop="password"
-          >
-            <el-input
-              type="password"
-              v-model="addUserForm.password"
-              autocomplete="off"
-            ></el-input>
+          <el-form-item label="密码" prop="password">
+            <el-input type="password" v-model="addUserForm.password" autocomplete="off"></el-input>
           </el-form-item>
-          <el-form-item
-            label="确认密码"
-            prop="checkPass"
-          >
-            <el-input
-              type="password"
-              v-model="addUserForm.checkPass"
-              autocomplete="off"
-            ></el-input>
+          <el-form-item label="确认密码" prop="checkPass">
+            <el-input type="password" v-model="addUserForm.checkPass" autocomplete="off"></el-input>
           </el-form-item>
         </el-form>
       </span>
-      <span
-        slot="footer"
-        class="dialog-footer"
-      >
+      <span slot="footer" class="dialog-footer">
         <el-button @click="addUser">取 消</el-button>
-        <el-button
-          type="primary"
-          @click="addUser"
-        >确 定</el-button>
+        <el-button type="primary" @click="addUser">确 定</el-button>
       </span>
     </el-dialog>
     <el-dialog
@@ -193,46 +115,21 @@
         ref="editUserFormRef"
         label-width="100px"
       >
-        <el-form-item
-          label="用户名"
-          prop="username"
-        >
-          <el-input
-            v-model="editUserForm.username"
-            disabled
-          ></el-input>
+        <el-form-item label="用户名" prop="username">
+          <el-input v-model="editUserForm.username" disabled></el-input>
         </el-form-item>
-        <el-form-item
-          label="密码"
-          prop="password"
-        >
-          <el-input
-            v-model="editUserForm.password"
-            autocomplete="off"
-          ></el-input>
+        <el-form-item label="密码" prop="password">
+          <el-input v-model="editUserForm.password" autocomplete="off"></el-input>
         </el-form-item>
-        <el-form-item
-          label="确认密码"
-          prop="checkPass"
-        >
-          <el-input
-            v-model="editUserForm.checkPass"
-            autocomplete="off"
-          ></el-input>
+        <el-form-item label="确认密码" prop="checkPass">
+          <el-input v-model="editUserForm.checkPass" autocomplete="off"></el-input>
         </el-form-item>
       </el-form>
-      <span
-        slot="footer"
-        class="dialog-footer"
-      >
+      <span slot="footer" class="dialog-footer">
         <el-button @click="editDialogVisible = false">取 消</el-button>
-        <el-button
-          type="primary"
-          @click="editUser"
-        >确 定</el-button>
+        <el-button type="primary" @click="editUser">确 定</el-button>
       </span>
     </el-dialog>
-
   </div>
 </template>
 
@@ -409,7 +306,6 @@ export default {
           .then(result => {
             this.userTotalList = result.data
             this.userTotal = result.data.length
-            console.log(this.userTotal)
             resolve(result.data)
           })
           .catch(error => {

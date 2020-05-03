@@ -4,5 +4,5 @@ const prodEnv = require('./prod.env')
 
 module.exports = merge(prodEnv, {
   NODE_ENV: '"development"',
-  BASE_API: '"/cin7"'
+  API_ROOT: '"https://api.cin7.com/api/v1/"'
 })
