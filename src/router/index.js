@@ -7,6 +7,7 @@ import Welcome from '../components/admin/welcome'
 import Users from '../components/user/user'
 import Authority from '../components/authority/authority list'
 import Statistics from '../components/statistics/statistics'
+import Pdf from '../components/pdf/createPdf'
 
 Vue.use(Router)
 
@@ -36,6 +37,9 @@ const router = new Router({
     }, {
       path: '/statistics',
       component: Statistics
+    }, {
+      path: '/pdf',
+      component: Pdf
     }]
   }]
 })

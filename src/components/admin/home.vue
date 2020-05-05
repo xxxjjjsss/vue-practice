@@ -64,6 +64,14 @@
                 <el-menu-item index="statistics">数据统计</el-menu-item>
               </el-menu-item-group>
             </el-submenu>
+             <el-submenu index="6">
+              <template slot="title">
+                <span>功能</span>
+              </template>
+              <el-menu-item-group>
+                <el-menu-item index="pdf">功能</el-menu-item>
+              </el-menu-item-group>
+            </el-submenu>
           </el-menu>
         </el-aside>
         <el-main>
