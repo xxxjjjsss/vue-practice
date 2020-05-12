@@ -53,7 +53,6 @@ export default {
       var newstr = this.$refs.odiv.innerHTML
       printIframe.setAttribute('srcdoc', newstr)
       printIframe.onload = function() {
-        console.log(printIframe.contentWindow)
         // 去掉iframe里面的dom的body的padding margin的默认数值
         printIframe.contentWindow.document.body.style.padding = '0px'
         printIframe.contentWindow.document.body.style.margin = '0px'

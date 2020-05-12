@@ -1,20 +1,51 @@
 <template>
   <div>
     <div id="scroll-board">
-      <!-- <div>
-        <el-input
-          placeholder="请输入页数"
-          class="input-with-select"
-          v-model="page"
-          clearable
-        >
-          <el-button slot="append" icon="el-icon-search" @click="drawChart"></el-button>
-        </el-input>
-      </div>-->
-      <div id="totalSalesOrder" style="width: 100%;height:400px;"></div>
-      <div id="saleByPerson" style="width: 100%;height:400px;"></div>
-      <div id="saleDipatch" style="width: 100%;height:400px;"></div>
+      <div>
+        <span>
+          <span style="font-size:16px;color:black">输入参数</span>
+          <el-input
+            placeholder="请输入页数"
+            class="input-with-select"
+            v-model="inputData.page"
+            size="medium"
+            clearable
+            style="width: 30%"
+            min="1"
+            max="50"
+          ></el-input>
+          <el-input
+            placeholder="请输每页订单数"
+            class="input-with-select"
+            v-model="inputData.rows"
+            size="medium"
+            clearable
+            style="width: 30%"
+            min="1"
+            max="250"
+          ></el-input>
+          <span slot="footer" class="dialog-footer">
+            <el-button
+              size="medium"
+              icon="el-icon-search"
+              @click="drawAllChart(inputData.page,inputData.rows)"
+            ></el-button>
+          </span>
+        </span>
+      </div>
+      <div>
+        <div id="totalSalesOrder" style="width:100%;height:400px;"></div>
+        <div id="saleByPerson" style="width:100%;height:400px;"></div>
+        <div id="saleItemDetal" style="width:100%;height:400px;"></div>
+      </div>
     </div>
+    <!-- <div>
+      <el-table :data="saledata" style="width: 100%">
+        <el-table-column prop="date" label="日期" width="180"></el-table-column>
+        <el-table-column prop="name" label="姓名" width="180"></el-table-column>
+        <el-table-column prop="address" label="地址"></el-table-column>
+      </el-table>
+    </div>-->
   </div>
 </template>
 
@@ -39,6 +70,8 @@ export default {
   name: 'ScrollBoard',
   data() {
     return {
+      saledata: {},
+      inputData: { page: '2', rows: '10' },
       // 总数居
       totalData: [],
       // 获取的saleperson数据
@@ -46,9 +79,11 @@ export default {
       // 产品
       products: [],
       // 最终展示名字
-      newSalesPerson: [],
+      allSalesPerson: [],
       // 最终展示销售量
-      newSalesPersonTotal: [],
+      allSalesPersonTotal: [],
+      // 最终对应的ID
+      allSalesPersonID: [],
       // 销售ID名字对应字典
       originSalePerson: {},
       // 长线图日期
@@ -56,84 +91,57 @@ export default {
       newDispatchedDatesString: [],
       newInvoiceDateString: [],
       // 长线图销售额
-      newTotal: []
+      newTotal: [],
+      totalProductCategories: [],
+      totalDataByDate: [],
+      startDate: '',
+      endDate: ''
     }
   },
   mounted() {
-    this.drawLongChart()
-    this.drawBarChart()
+    // this.drawLongChart()
+    // this.drawBarChart()
   },
   methods: {
-    getTotalData() {
-      return new Promise((resolve, reject) => {
-        let i = 1
-        while (i <= 1) {
-          try {
-            this.reqCin7Service(
-              '/SalesOrders?page=' + i + '&rows=250',
-              requestOptions,
-              'get'
-            )
-              .then(result => {
-                this.totalData = []
-                for (var i = 1; i < result.length; i++) {
-                  this.totalData.push(result[i])
-                  resolve(result)
-                }
-                let newCreatedDate = []
-                let newDispatchedDate = []
-                let newInvoiceDate = []
-                let newTotal = []
-                for (let index = 0; index < this.totalData.length; index++) {
-                  const createdDate = this.totalData[index].createdDate
-                  const dispatchedDate = this.totalData[index].dispatchedDate
-                  const invoiceDate = this.totalData[index].invoiceDate
-                  newInvoiceDate.push(invoiceDate)
-                  newCreatedDate.push(createdDate)
-                  newDispatchedDate.push(dispatchedDate)
-                  newTotal.push(this.totalData[index].total)
-                }
-                this.newInvoiceDateString = newInvoiceDate
-                this.newCreatedDatesString = newCreatedDate
-                this.newDispatchedDatesString = newDispatchedDate
-                this.newTotal = newTotal
-              })
-              .catch(error => {
-                console.log(error.result)
-              })
-            i += 1
-          } catch (error) {
-            break
-          }
-        }
-      })
-    },
+    // 获取数据的基础方法
     getData(page, rows, dataType) {
       return new Promise((resolve, reject) => {
         let i = 1
+        let newresult = []
         while (i <= page) {
           try {
-            this.reqCin7Service(
-              '/' + dataType + '?page=' + i + '&rows=' + rows,
-              requestOptions,
-              'get'
+            newresult.push(
+              this.reqCin7Service(
+                '/' + dataType + '?page=' + i.toString() + '&rows=' + rows,
+                requestOptions,
+                'get'
+              )
+                .then(result => {
+                  return result
+                })
+                .catch(error => {
+                  console.log(error.result)
+                })
             )
-              .then(result => {
-                resolve(result)
-                return result
-              })
-              .catch(error => {
-                console.log(error.result)
-              })
           } catch (error) {}
           i += 1
         }
+        Promise.all(newresult)
+          .then(result => {
+            resolve(result)
+            console.log(result.flat())
+            this.totalData = result.flat()
+            return result.flat()
+          })
+          .catch(error => {
+            console.log(error.result)
+          })
       })
     },
     // 获取所有slaeperson的属性储存到salePerson数组
     getPerson() {
       return new Promise((resolve, reject) => {
-        this.reqCin7Service('/Users', requestOptions, 'get')
+        this.reqCin7Service('/Users?&rows=250', requestOptions, 'get')
           .then(result => {
             this.salePerson = result
             resolve(result)
@@ -143,8 +151,66 @@ export default {
           })
       })
     },
-    getProducts() {
-      this.getData(1, 20, 'Products')
+    getProductsByDate(page, rows, dataType, userID, startDate, endDate) {
+      return new Promise((resolve, reject) => {
+        let i = 1
+        let newresult = []
+        // let url
+        while (i <= page) {
+          try {
+            newresult.push(
+              this.reqCin7Service(
+                '/' +
+                  dataType +
+                  '?page=' +
+                  i +
+                  '&rows=' +
+                  rows +
+                  'where=salesPersonId=' +
+                  userID +
+                  ' and InvoiceDate>' +
+                  startDate +
+                  ' and InvoiceDate<' +
+                  endDate,
+                requestOptions,
+                'get'
+              )
+                .then(result => {
+                  return result
+                })
+                .catch(error => {
+                  console.log(error.result)
+                })
+            )
+          } catch (error) {}
+          i += 1
+        }
+        Promise.all(newresult)
+          .then(result => {
+            resolve(result)
+            console.log(result.flat())
+            this.totalDataByDate = result.flat()
+            return result.flat()
+          })
+          .catch(error => {
+            console.log(error.result)
+          })
+      })
+    },
+    getProductsCatergories() {
+      return new Promise((resolve, reject) => {
+        this.reqCin7Service('/ProductCategories', requestOptions, 'get')
+          .then(result => {
+            resolve(result)
+            return result
+          })
+          .catch(error => {
+            console.log(error.result)
+          })
+      })
+    },
+    getProducts(page, rows) {
+      this.getData(page, rows, 'Products')
         .then(result => {
           this.products = result
           console.log(this.products)
@@ -153,12 +219,17 @@ export default {
           console.log(error.result)
         })
     },
-    drawLongChart() {
-      this.getData(1, 20, 'SalesOrders').then(result => {
-        this.totalData = []
-        for (var i = 1; i < result.length; i++) {
-          this.totalData.push(result[i])
-        }
+    drawAllChart(page, rows) {
+      this.drawLongChart(page, rows)
+      this.drawBarChart(page, rows)
+      this.drawPieChart()
+    },
+    drawLongChart(page, rows) {
+      this.getData(page, rows, 'SalesOrders').then(result => {
+        // this.totalData = []
+        // for (var i = 1; i < result.length; i++) {
+        //   this.totalData.push(result[i])
+        // }
         let newCreatedDate = []
         let newDispatchedDate = []
         let newInvoiceDate = []
@@ -259,27 +330,30 @@ export default {
         }
         // 使用刚指定的配置项和数据显示图表。
         myChart.setOption(option)
+        window.addEventListener('resize', function() {
+          myChart.resize()
+        })
+        myChart.on('datazoom', function(params) {
+          let endValue = myChart.getOption().dataZoom[1].endValue
+          let startValue = myChart.getOption().dataZoom[1].startValue
+          this.startDate = option.xAxis.data[startValue]
+          this.endDate = option.xAxis.data[endValue]
+          console.log(
+            option.xAxis.data[endValue],
+            option.xAxis.data[startValue]
+          )
+        })
       })
     },
-    drawBarChart() {
-      this.getTotalData().then(() => {
+    drawBarChart(page, rows) {
+      this.getData(page, rows, 'SalesOrders').then(result => {
+        this.allSalesPerson = []
+        // 最终展示销售量
+        this.allSalesPersonTotal = []
+        // 最终对应的ID
         var salesPersonTotal = [] // 存最终数据结果
         var nameContainer = {} // 针对键name进行归类的容器
-        this.totalData.forEach(item => {
-          nameContainer[item.salesPersonId] =
-            nameContainer[item.salesPersonId] || []
-
-          nameContainer[item.salesPersonId].push(item)
-        })
-
-        var salesName = Object.keys(nameContainer)
-        salesName.forEach(nameItem => {
-          let count = 0
-          nameContainer[nameItem].forEach(item => {
-            count += item.total
-          })
-          salesPersonTotal.push({ nameItem, count })
-        })
+        // 自定义字典方法
         function Dictionary() {
           this.add = add
           // eslint-disable-next-line no-new-object
@@ -311,6 +385,23 @@ export default {
         function find(key) {
           return this.datastore[key]
         }
+        // 生成salepersonID数组
+        this.totalData.forEach(item => {
+          nameContainer[item.salesPersonId] =
+            nameContainer[item.salesPersonId] || []
+          nameContainer[item.salesPersonId].push(item)
+        })
+        // 生成saleperson总金额数组
+        var salesName = Object.keys(nameContainer)
+        salesName.forEach(nameItem => {
+          let count = 0
+          nameContainer[nameItem].forEach(item => {
+            count += item.total
+          })
+          salesPersonTotal.push({ nameItem, count })
+        })
+        // 生成salepersonID和名字字典
+
         var originSalePersonDic = new Dictionary()
         // 遍历salePerson数组,提取出名字放到newFirstName,提取出ID放到newSalePersonId
         for (let index = 0; index < this.salePerson.length; index++) {
@@ -318,96 +409,152 @@ export default {
           let newSalePersonId = this.salePerson[index].id
           originSalePersonDic.add(newSalePersonId, newFirstName)
         }
+        // 字典存到DATA中
         this.originSalePerson = originSalePersonDic
+        // 新建sale对应名称和金额的数组
         for (let index = 0; index < salesPersonTotal.length; index++) {
           let newItem = salesPersonTotal[index].nameItem
           let newCount = salesPersonTotal[index].count
-          this.newSalesPerson.push(this.originSalePerson.find(newItem))
-          this.newSalesPersonTotal.push(newCount)
+          this.allSalesPerson.push(this.originSalePerson.find(newItem))
+          this.allSalesPersonTotal.push(newCount)
+          this.allSalesPersonID.push()
         }
-
+        // 生成图
         let pieChart = this.$echarts.init(
           document.getElementById('saleByPerson')
         )
         let PieChartOption = {
           xAxis: {
             type: 'category',
-            data: this.newSalesPerson
+            data: this.allSalesPerson
           },
           yAxis: {
             type: 'value'
           },
           series: [
             {
-              data: this.newSalesPersonTotal,
+              data: this.allSalesPersonTotal,
               type: 'bar'
             }
           ]
         }
         pieChart.setOption(PieChartOption)
+        // 获取点击位置
+        window.addEventListener('resize', function() {
+          pieChart.resize()
+        })
+        pieChart.getZr().on('click', function(params) {
+          const pointInPixel = [params.offsetX, params.offsetY]
+          if (pieChart.containPixel('grid', pointInPixel)) {
+            let xIndex = pieChart.convertFromPixel({ seriesIndex: 0 }, [
+              params.offsetX,
+              params.offsetY
+            ])
+            // 事件处理代码书写位置
+            console.log(xIndex)
+            // 找到数组ID对应的salespersonID
+            // 列出对应ID的订单
+            // 展示成列表
+          }
+        })
+      })
+    },
+    drawPieChart(page, rows, dataType, userID, startDate, endDate) {
+      // 获取所有的品牌组成二维数组
+      this.getProductsCatergories().then(result => {
+        let newProductCategorieslist = []
+        for (let index = 0; index < result.length; index++) {
+          let element = []
+          element.push(result[index].name)
+          newProductCategorieslist.push(element)
+        }
+        this.totalProductCategories = newProductCategorieslist
+        console.log(this.totalProductCategories)
+      })
+      // 获取单个人指定时间内的saletotal
+      this.getProductsByDate(
+        page,
+        rows,
+        dataType,
+        userID,
+        startDate,
+        endDate
+      ).then(result => {
+        // 待续
+      })
+      // 获取时间周期
+      // 根据时间周期获取salestotal放到二维数组中
+      let pieChart = this.$echarts.init(
+        document.getElementById('saleItemDetal')
+      )
+      setTimeout(function() {
+        let option = {
+          legend: {},
+          tooltip: {
+            trigger: 'axis',
+            showContent: false
+          },
+          dataset: {
+            source: [
+              ['product', '2012', '2013', '2014', '2015', '2016', '2017'],
+              ['Matcha Latte', 41.1, 30.4, 65.1, 53.3, 83.8, 98.7],
+              ['Milk Tea', 86.5, 92.1, 85.7, 83.1, 73.4, 55.1],
+              ['Cheese Cocoa', 24.1, 67.2, 79.5, 86.4, 65.2, 82.5],
+              ['Walnut Brownie', 55.2, 67.1, 69.2, 72.4, 53.9, 39.1]
+            ]
+          },
+          xAxis: { type: 'category' },
+          yAxis: { gridIndex: 0 },
+          grid: { top: '55%' },
+          series: [
+            { type: 'line', smooth: true, seriesLayoutBy: 'row' },
+            { type: 'line', smooth: true, seriesLayoutBy: 'row' },
+            { type: 'line', smooth: true, seriesLayoutBy: 'row' },
+            { type: 'line', smooth: true, seriesLayoutBy: 'row' },
+            {
+              type: 'pie',
+              id: 'pie',
+              radius: '30%',
+              center: ['50%', '25%'],
+              label: {
+                formatter: '{b}: {@2012} ({d}%)'
+              },
+              encode: {
+                itemName: 'product',
+                value: '2012',
+                tooltip: '2012'
+              }
+            }
+          ]
+        }
+
+        pieChart.on('updateAxisPointer', function(event) {
+          var xAxisInfo = event.axesInfo[0]
+          if (xAxisInfo) {
+            var dimension = xAxisInfo.value + 1
+            pieChart.setOption({
+              series: {
+                id: 'pie',
+                label: {
+                  formatter: '{b}: {@[' + dimension + ']} ({d}%)'
+                },
+                encode: {
+                  value: dimension,
+                  tooltip: dimension
+                }
+              }
+            })
+          }
+        })
+
+        pieChart.setOption(option)
       })
     }
-    // drawDelayBarChart() {
-    //   this.getTotalData().then(() => {
-    //     let myChart = this.$echarts.init(document.getElementById('saleDipatch'))
-    //     let option = {
-    //       title: {
-    //         text: '柱状图动画延迟'
-    //       },
-    //       legend: {
-    //         data: ['bar', 'bar2']
-    //       },
-    //       toolbox: {
-    //         // y: 'bottom',
-    //         feature: {
-    //           magicType: {
-    //             type: ['stack', 'tiled']
-    //           },
-    //           dataView: {},
-    //           saveAsImage: {
-    //             pixelRatio: 2
-    //           }
-    //         }
-    //       },
-    //       tooltip: {},
-    //       xAxis: {
-    //         data: this.newCreatedDates,
-    //         splitLine: {
-    //           show: false
-    //         }
-    //       },
-    //       yAxis: {},
-    //       series: [
-    //         {
-    //           name: 'bar',
-    //           type: 'bar',
-    //           data: this.newTotal,
-    //           animationDelay: function(idx) {
-    //             return idx * 10
-    //           }
-    //         },
-    //         {
-    //           name: 'bar2',
-    //           type: 'bar',
-    //           data: data2,
-    //           animationDelay: function(idx) {
-    //             return idx * 10 + 100
-    //           }
-    //         }
-    //       ],
-    //       animationEasing: 'elasticOut',
-    //       animationDelayUpdate: function(idx) {
-    //         return idx * 5
-    //       }
-    //     }
-    //     myChart.setOption(option)
-    //   })
-    // }
   },
+
+  computed: {},
   created: function() {
-    // this.getTotalData()
     this.getPerson()
-    this.getProducts()
   }
 }
 </script>
