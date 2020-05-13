@@ -24,7 +24,10 @@
             min="1"
             max="250"
           ></el-input>
-          <span slot="footer" class="dialog-footer">
+          <span
+            slot="footer"
+            class="dialog-footer"
+          >
             <el-button
               size="medium"
               icon="el-icon-search"
@@ -34,9 +37,19 @@
         </span>
       </div>
       <div>
-        <div id="totalSalesOrder" style="width:100%;height:400px;"></div>
-        <div id="saleByPerson" style="width:100%;height:400px;" @click="drawPieChart"></div>
-        <div id="saleItemDetal" style="width:100%;height:400px;"></div>
+        <div
+          id="totalSalesOrder"
+          style="width:100%;height:400px;"
+        ></div>
+        <div
+          id="saleByPerson"
+          style="width:100%;height:400px;"
+          @click="drawPieChart"
+        ></div>
+        <div
+          id="saleItemDetal"
+          style="width:100%;height:400px;"
+        ></div>
       </div>
     </div>
     <!-- <div>
@@ -59,11 +72,10 @@ myHeaders.append(
 )
 
 var requestOptions = {
-  method: 'GET',
-  headers: myHeaders,
-  redirect: 'follow',
-  Username: 'NZHEALTHWHOLESALNZ',
-  Password: 'cfdca34ee047472e9ef2f4904088894f'
+  headers: {
+    Authorization:
+      'Basic TlpIRUFMVEhXSE9MRVNBTE5aOmNmZGNhMzRlZTA0NzQ3MmU5ZWYyZjQ5MDQwODg4OTRm'
+  }
 }
 
 export default {
@@ -179,13 +191,10 @@ export default {
                   rows +
                   '&where=salesPersonId=' +
                   userID +
-                  ' and InvoiceDate>' +
-                  "'" +
-                  startDate +
-                  "'" +
-                  ' and InvoiceDate<' +
-                  "'" +
+                  " and InvoiceDate>'" +
                   endDate +
+                  "' and InvoiceDate<'" +
+                  startDate +
                   "'",
                 requestOptions,
                 'get'

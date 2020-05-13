@@ -5,7 +5,7 @@ import Axios from 'axios'
 Axios.defaults.baseWooURL = domain.Base_WOO_URL
 Axios.defaults.baseCin7URL = domain.Base_CI7_URL
 Axios.defaults.timeout = 180000
-// 2->对请求传递过来的参数处理
+
 function paramsToUrl(url, params) {
   if (!params) return url
   for (var key in params) {
@@ -20,7 +20,6 @@ function paramsToUrl(url, params) {
   return url
 }
 
-// 3->在common.js中封装公用方法-----封装请求的方法
 function requireData(url, params, type, item) {
   if (!url) return false
   switch (item) {
