@@ -35,7 +35,7 @@
       </div>
       <div>
         <div id="totalSalesOrder" style="width:100%;height:400px;"></div>
-        <div id="saleByPerson" style="width:100%;height:400px;"></div>
+        <div id="saleByPerson" style="width:100%;height:400px;" @click="drawPieChart"></div>
         <div id="saleItemDetal" style="width:100%;height:400px;"></div>
       </div>
     </div>
@@ -92,16 +92,20 @@ export default {
       newInvoiceDateString: [],
       // 长线图销售额
       newTotal: [],
+      // 所有产品分类
       totalProductCategories: [],
+      // 按日期搜索的所有数据
       totalDataByDate: [],
+      // 长时间图的起始时间和结束时间
       startDate: '',
-      endDate: ''
+      endDate: '',
+      // 输入的时间间隔
+      dayInterval: '',
+      // 点击柱状图获取的ID
+      clickId: ''
     }
   },
-  mounted() {
-    // this.drawLongChart()
-    // this.drawBarChart()
-  },
+  mounted() {},
   methods: {
     // 获取数据的基础方法
     getData(page, rows, dataType) {
@@ -129,7 +133,6 @@ export default {
         Promise.all(newresult)
           .then(result => {
             resolve(result)
-            console.log(result.flat())
             this.totalData = result.flat()
             return result.flat()
           })
@@ -151,7 +154,15 @@ export default {
           })
       })
     },
-    getProductsByDate(page, rows, dataType, userID, startDate, endDate) {
+    // 获取指定日期内指定ID的所有数据
+    getSaleOrdersByDateAndPerson(
+      page,
+      rows,
+      dataType,
+      userID,
+      startDate,
+      endDate
+    ) {
       return new Promise((resolve, reject) => {
         let i = 1
         let newresult = []
@@ -166,16 +177,21 @@ export default {
                   i +
                   '&rows=' +
                   rows +
-                  'where=salesPersonId=' +
+                  '&where=salesPersonId=' +
                   userID +
                   ' and InvoiceDate>' +
+                  "'" +
                   startDate +
+                  "'" +
                   ' and InvoiceDate<' +
-                  endDate,
+                  "'" +
+                  endDate +
+                  "'",
                 requestOptions,
                 'get'
               )
                 .then(result => {
+                  console.log(result)
                   return result
                 })
                 .catch(error => {
@@ -188,7 +204,6 @@ export default {
         Promise.all(newresult)
           .then(result => {
             resolve(result)
-            console.log(result.flat())
             this.totalDataByDate = result.flat()
             return result.flat()
           })
@@ -222,7 +237,7 @@ export default {
     drawAllChart(page, rows) {
       this.drawLongChart(page, rows)
       this.drawBarChart(page, rows)
-      this.drawPieChart()
+      // this.drawPieChart()
     },
     drawLongChart(page, rows) {
       this.getData(page, rows, 'SalesOrders').then(result => {
@@ -333,15 +348,18 @@ export default {
         window.addEventListener('resize', function() {
           myChart.resize()
         })
+        let that = this
         myChart.on('datazoom', function(params) {
           let endValue = myChart.getOption().dataZoom[1].endValue
           let startValue = myChart.getOption().dataZoom[1].startValue
-          this.startDate = option.xAxis.data[startValue]
-          this.endDate = option.xAxis.data[endValue]
-          console.log(
-            option.xAxis.data[endValue],
-            option.xAxis.data[startValue]
+          that.startDate = option.xAxis.data[startValue]
+          that.endDate = option.xAxis.data[endValue]
+          let sd = new Date(option.xAxis.data[startValue])
+          let ed = new Date(option.xAxis.data[endValue])
+          let dayDiff = Math.floor(
+            (sd.getTime() - ed.getTime()) / (24 * 3600 * 1000)
           )
+          that.dayDiff = dayDiff
         })
       })
     },
@@ -411,13 +429,13 @@ export default {
         }
         // 字典存到DATA中
         this.originSalePerson = originSalePersonDic
+
         // 新建sale对应名称和金额的数组
         for (let index = 0; index < salesPersonTotal.length; index++) {
           let newItem = salesPersonTotal[index].nameItem
           let newCount = salesPersonTotal[index].count
           this.allSalesPerson.push(this.originSalePerson.find(newItem))
           this.allSalesPersonTotal.push(newCount)
-          this.allSalesPersonID.push()
         }
         // 生成图
         let pieChart = this.$echarts.init(
@@ -443,6 +461,9 @@ export default {
         window.addEventListener('resize', function() {
           pieChart.resize()
         })
+        console.log(this.inputData)
+        // 返回点击柱的ID
+        let that = this
         pieChart.getZr().on('click', function(params) {
           const pointInPixel = [params.offsetX, params.offsetY]
           if (pieChart.containPixel('grid', pointInPixel)) {
@@ -450,16 +471,14 @@ export default {
               params.offsetX,
               params.offsetY
             ])
-            // 事件处理代码书写位置
-            console.log(xIndex)
-            // 找到数组ID对应的salespersonID
-            // 列出对应ID的订单
-            // 展示成列表
+            // 返回数组ID对应的salespersonID
+            that.clickId = salesPersonTotal[xIndex[0]].nameItem
           }
         })
+        // 画出指定日期指定sales的饼图
       })
     },
-    drawPieChart(page, rows, dataType, userID, startDate, endDate) {
+    drawPieChart() {
       // 获取所有的品牌组成二维数组
       this.getProductsCatergories().then(result => {
         let newProductCategorieslist = []
@@ -471,16 +490,29 @@ export default {
         this.totalProductCategories = newProductCategorieslist
         console.log(this.totalProductCategories)
       })
-      // 获取单个人指定时间内的saletotal
-      this.getProductsByDate(
+      let page = this.inputData.page
+      let rows = this.inputData.rows
+      let userID = this.clickId
+      let startDate = this.startDate
+      let endDate = this.endDate
+      // 获取单个人指定时间内的销售详情
+      this.getSaleOrdersByDateAndPerson(
         page,
         rows,
-        dataType,
+        'SalesOrders',
         userID,
         startDate,
         endDate
       ).then(result => {
-        // 待续
+        console.log(
+          page,
+          rows,
+          'SalesOrders',
+          userID,
+          startDate,
+          endDate,
+          result
+        )
       })
       // 获取时间周期
       // 根据时间周期获取salestotal放到二维数组中
