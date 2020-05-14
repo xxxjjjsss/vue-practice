@@ -24,10 +24,7 @@
             min="1"
             max="250"
           ></el-input>
-          <span
-            slot="footer"
-            class="dialog-footer"
-          >
+          <span slot="footer" class="dialog-footer">
             <el-button
               size="medium"
               icon="el-icon-search"
@@ -37,39 +34,65 @@
         </span>
       </div>
       <div>
-        <div
-          id="totalSalesOrder"
-          style="width:100%;height:400px;"
-        ></div>
-        <div
-          id="saleByPerson"
-          style="width:100%;height:400px;"
-          @click="drawPieChart"
-        ></div>
-        <div
-          id="saleItemDetal"
-          style="width:100%;height:400px;"
-        ></div>
+        <div id="totalSalesOrder" style="width:100%;height:400px;"></div>
+        <div id="saleByPerson" style="width:100%;height:400px;" @click="drawPieChart"></div>
+        <div id="saleItemDetal" style="width:100%;height:400px;"></div>
       </div>
     </div>
-    <!-- <div>
-      <el-table :data="saledata" style="width: 100%">
-        <el-table-column prop="date" label="日期" width="180"></el-table-column>
-        <el-table-column prop="name" label="姓名" width="180"></el-table-column>
-        <el-table-column prop="address" label="地址"></el-table-column>
+    <div>
+      <el-table
+        v-show="flag"
+        :data="data"
+        size="small"
+        border
+        style="width: 100%;"
+        @expand-change="rowExpand"
+      >
+        <el-table-column type="expand" prop>
+          <template>
+            <el-table :data="orderDetailData">
+              <el-table-column label="订单编号" prop="orderId" />
+              <el-table-column label="商品名称" prop="skuName" />
+              <el-table-column label="购买数量" prop="purchaseNum" />
+              <el-table-column label="价格" prop="skuPrice" />
+              <el-table-column label="商品编码" prop="venderSku" />
+              <el-table-column label="单品优惠" prop="discount" />
+            </el-table>
+          </template>
+        </el-table-column>
+        <el-table-column prop="orderId" label="订单编号" align="left" width="120" />
+        <el-table-column prop="venderId" label="商家ID" />
+        <el-table-column prop="orderTime" label="订单时间" min-width="140" />
+        <el-table-column prop="venderCode" label="客户编码" width="100" />
+        <el-table-column prop="payType" label="付款方式" />
+        <el-table-column prop="totalMoney" label="总金额" />
+        <el-table-column prop="discount" label="优惠金额" />
+        <el-table-column prop="payMoney" label="支付金额" />
+        <el-table-column prop="companyName" label="买家公司名称" width="120" />
+        <el-table-column prop="pickName" label="收货人" />
+        <el-table-column prop="pickAddress" label="收货地址" width="200" />
+        <el-table-column prop="pickPhone" label="收货人电话" width="100" />
+        <el-table-column prop="orderState" label="订单状态" />
+        <el-table-column prop="orderState" label="平台优惠" />
+        <el-table-column prop="remark" label="备注" />
+        <el-table-column prop="freight" label="运费" width="60" />
+        <el-table-column label="操作" width="150px" align="center"></el-table-column>
       </el-table>
-    </div>-->
+      <!--分页组件-->
+      <el-pagination
+        :total="paginationData.total"
+        style="margin-top: 8px;"
+        layout="total, prev, pager, next, sizes"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+        :page-size="paginationData.pagesize"
+      />
+    </div>
   </div>
 </template>
 
 <script>
 import echarts from 'echarts'
-
-var myHeaders = new Headers()
-myHeaders.append(
-  'Authorization',
-  'Basic TlpIRUFMVEhXSE9MRVNBTE5aOmNmZGNhMzRlZTA0NzQ3MmU5ZWYyZjQ5MDQwODg4OTRm'
-)
 
 var requestOptions = {
   headers: {
@@ -82,6 +105,7 @@ export default {
   name: 'ScrollBoard',
   data() {
     return {
+      flag: false,
       saledata: {},
       inputData: { page: '2', rows: '10' },
       // 总数居
@@ -106,19 +130,52 @@ export default {
       newTotal: [],
       // 所有产品分类
       totalProductCategories: [],
-      // 按日期搜索的所有数据
-      totalDataByDate: [],
+      // 按日期和sales搜索的所有数据整理
+      totalDataByDateAndSalesFlat: [],
+      // 按日期和sales搜索的所有数据
+      totalDataByDateAndSales: [],
       // 长时间图的起始时间和结束时间
       startDate: '',
       endDate: '',
       // 输入的时间间隔
       dayInterval: '',
       // 点击柱状图获取的ID
-      clickId: ''
+      clickId: '',
+      // 分页页码
+      // 分页行数
+      paginationData: {
+        pagenum: 1,
+        total: '',
+        pagesize: 10
+      }
     }
   },
   mounted() {},
   methods: {
+    handleSizeChange(newSize) {
+      // console.log(newSize)
+      this.queryInfo.pagesize = newSize
+      this.getSaleOrdersByDateAndPerson(
+        this.queryInfo.pagenum,
+        this.queryInfo.pagesize,
+        'SalesOrders',
+        this.clickId,
+        this.startDate,
+        this.endDate
+      )
+    },
+    handleCurrentChange(newPage) {
+      // console.log(newPage)
+      this.queryInfo.pagenum = newPage
+      this.getSaleOrdersByDateAndPerson(
+        this.queryInfo.pagenum,
+        this.queryInfo.pagesize,
+        'SalesOrders',
+        this.clickId,
+        this.startDate,
+        this.endDate
+      )
+    },
     // 获取数据的基础方法
     getData(page, rows, dataType) {
       return new Promise((resolve, reject) => {
@@ -173,52 +230,78 @@ export default {
       dataType,
       userID,
       startDate,
-      endDate
+      endDate,
+      isflat
     ) {
       return new Promise((resolve, reject) => {
         let i = 1
         let newresult = []
         // let url
-        while (i <= page) {
-          try {
-            newresult.push(
-              this.reqCin7Service(
-                '/' +
-                  dataType +
-                  '?page=' +
-                  i +
-                  '&rows=' +
-                  rows +
-                  '&where=salesPersonId=' +
-                  userID +
-                  " and InvoiceDate>'" +
-                  endDate +
-                  "' and InvoiceDate<'" +
-                  startDate +
-                  "'",
-                requestOptions,
-                'get'
+        if (isflat) {
+          while (i <= page) {
+            try {
+              newresult.push(
+                this.reqCin7Service(
+                  '/' +
+                    dataType +
+                    '?page=' +
+                    i +
+                    '&rows=' +
+                    rows +
+                    '&where=salesPersonId=' +
+                    userID +
+                    " and InvoiceDate>'" +
+                    endDate +
+                    "' and InvoiceDate<'" +
+                    startDate +
+                    "'",
+                  requestOptions,
+                  'get'
+                )
+                  .then(result => {
+                    return result
+                  })
+                  .catch(error => {
+                    console.log(error.result)
+                  })
               )
-                .then(result => {
-                  console.log(result)
-                  return result
-                })
-                .catch(error => {
-                  console.log(error.result)
-                })
-            )
-          } catch (error) {}
-          i += 1
+            } catch (error) {}
+            i += 1
+          }
+          Promise.all(newresult)
+            .then(result => {
+              resolve(result)
+              this.paginationData.total = result.length
+              return result.flat()
+            })
+            .catch(error => {
+              console.log(error.result)
+            })
+        } else {
+          this.reqCin7Service(
+            '/' +
+              dataType +
+              '?page=' +
+              i +
+              '&rows=' +
+              rows +
+              '&where=salesPersonId=' +
+              userID +
+              " and InvoiceDate>'" +
+              endDate +
+              "' and InvoiceDate<'" +
+              startDate +
+              "'",
+            requestOptions,
+            'get'
+          )
+            .then(result => {
+              return result
+            })
+            .catch(error => {
+              console.log(error.result)
+            })
         }
-        Promise.all(newresult)
-          .then(result => {
-            resolve(result)
-            this.totalDataByDate = result.flat()
-            return result.flat()
-          })
-          .catch(error => {
-            console.log(error.result)
-          })
       })
     },
     getProductsCatergories() {
@@ -470,7 +553,6 @@ export default {
         window.addEventListener('resize', function() {
           pieChart.resize()
         })
-        console.log(this.inputData)
         // 返回点击柱的ID
         let that = this
         pieChart.getZr().on('click', function(params) {
@@ -497,7 +579,6 @@ export default {
           newProductCategorieslist.push(element)
         }
         this.totalProductCategories = newProductCategorieslist
-        console.log(this.totalProductCategories)
       })
       let page = this.inputData.page
       let rows = this.inputData.rows
@@ -513,18 +594,40 @@ export default {
         startDate,
         endDate
       ).then(result => {
-        console.log(
-          page,
-          rows,
-          'SalesOrders',
-          userID,
-          startDate,
-          endDate,
-          result
-        )
+        // 获取单个人的指定日期内的所有数据整理
+        this.totalDataByDateAndSalesFlat = result.flat()
+        // 获取单个人的指定日期内的所有数据
+        this.totalDataByDateAndSales = result
       })
       // 获取时间周期
+      // eslint-disable-next-line no-unused-vars
+      let dateInterval = 1
+      // 整理数据表格表格
+      let formByDateAndSales = []
+      for (
+        let index1 = 0;
+        index1 < this.totalDataByDateAndSales.length;
+        index1++
+      ) {
+        for (
+          let index2 = 0;
+          index2 < this.totalDataByDateAndSales[index1].lineItems.length;
+          index2++
+        ) {
+          const element = this.totalDataByDateAndSales[index1].lineItems[index2]
+          formByDateAndSales.push(
+            element.barcode,
+            element.name,
+            element.qty,
+            element.unitPrice,
+            element.createdDate
+          )
+        }
+      }
+      // 画出指定sales指定日期总表格表格
+
       // 根据时间周期获取salestotal放到二维数组中
+
       let pieChart = this.$echarts.init(
         document.getElementById('saleItemDetal')
       )
