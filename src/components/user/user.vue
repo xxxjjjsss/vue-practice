@@ -268,7 +268,7 @@ export default {
           .then(result => {
             this.userList = result.data
             this.userTotal = result.data.length
-            // console.log(this.queryInfo)
+            console.log(this.userTotal)
             resolve(result.data)
           })
           .catch(error => {

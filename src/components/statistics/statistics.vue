@@ -1,88 +1,119 @@
 <template>
-  <div>
-    <div id="scroll-board">
-      <div>
-        <span>
-          <span style="font-size:16px;color:black">输入参数</span>
-          <el-input
-            placeholder="请输入页数"
-            class="input-with-select"
-            v-model="inputData.page"
-            size="medium"
-            clearable
-            style="width: 30%"
-            min="1"
-            max="50"
-          ></el-input>
-          <el-input
-            placeholder="请输每页订单数"
-            class="input-with-select"
-            v-model="inputData.rows"
-            size="medium"
-            clearable
-            style="width: 30%"
-            min="1"
-            max="250"
-          ></el-input>
-          <span slot="footer" class="dialog-footer">
-            <el-button
+  <div id="scroll-board">
+    <el-row>
+      <el-col :span="24">
+        <div class="grid-content bg-purple-dark">
+          <div class="block">
+            <span class="demonstration"></span>
+            <el-date-picker
+              v-model="inputDatevalue"
+              type="datetimerange"
+              :picker-options="pickerOptions"
+              range-separator="至"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+              align="right"
+            ></el-date-picker>
+            <el-button size="large" icon="el-icon-search" @click="drawAllChartByDate()"></el-button>
+            <el-button size="large" @click="reset">重置</el-button>
+          </div>
+        </div>
+      </el-col>
+    </el-row>
+    <el-row>
+      <el-col :span="24" style="margin-top:50px">
+        <div class="grid-content bg-purple" style="margin:10px">
+          <span>
+            <span style="font-size:16px;color:black;">输入参数</span>
+            <el-input
+              placeholder="请输入页数"
+              class="input-with-select"
+              v-model="inputData.page"
               size="medium"
-              icon="el-icon-search"
-              @click="drawAllChart(inputData.page,inputData.rows)"
-            ></el-button>
+              clearable
+              style="width: 30%"
+              min="1"
+              max="50"
+            ></el-input>
+            <el-input
+              placeholder="请输每页订单数"
+              class="input-with-select"
+              v-model="inputData.rows"
+              size="medium"
+              clearable
+              style="width: 30%"
+              min="1"
+              max="250"
+            ></el-input>
+            <span slot="footer" class="dialog-footer">
+              <el-button
+                size="medium"
+                icon="el-icon-search"
+                @click="drawAllChart(inputData.page,inputData.rows)"
+              ></el-button>
+              <el-button size="medium" @click="reset">重置</el-button>
+            </span>
           </span>
-        </span>
-      </div>
-      <div>
-        <div id="totalSalesOrder" style="width:100%;height:400px;"></div>
-        <div id="saleByPerson" style="width:100%;height:400px;" @click="drawPieChart"></div>
-        <div id="saleItemDetal" style="width:100%;height:400px;"></div>
-      </div>
-    </div>
+        </div>
+      </el-col>
+    </el-row>
+
+    <el-row>
+      <el-col :span="12">
+        <div class="grid-content bg-purple">
+          <div v-show="longChartFlag" id="totalSalesOrder" style="width:100%;height:400px;"></div>
+        </div>
+      </el-col>
+      <el-col :span="12">
+        <div class="grid-content bg-purple-light">
+          <div
+            v-show="barChartFlag"
+            id="saleByPerson"
+            style="width:100%;height:400px;"
+            @click="drawPieChart"
+          ></div>
+        </div>
+      </el-col>
+    </el-row>
+    <div id="saleItemDetal" v-show="pieChartFlag" style="width:16em;height:400px;"></div>
     <div>
       <el-table
-        v-show="flag"
-        :data="data"
+        v-show="tableFlag"
+        :data="totalDataByDateAndSales"
         size="small"
         border
         style="width: 100%;"
         @expand-change="rowExpand"
       >
         <el-table-column type="expand" prop>
-          <template>
-            <el-table :data="orderDetailData">
-              <el-table-column label="订单编号" prop="orderId" />
-              <el-table-column label="商品名称" prop="skuName" />
-              <el-table-column label="购买数量" prop="purchaseNum" />
-              <el-table-column label="价格" prop="skuPrice" />
-              <el-table-column label="商品编码" prop="venderSku" />
-              <el-table-column label="单品优惠" prop="discount" />
+          <template slot-scope>
+            <el-table :data="itemsDetail">
+              <el-table-column label="产品ID" prop="productId" />
+              <el-table-column label="产品名" prop="name" />
+              <el-table-column label="条形码" prop="barcode" />
+              <el-table-column label="折扣" prop="discount" />
+              <el-table-column label="运输数量" prop="qtyShipped" />
+              <el-table-column label="单价" prop="unitPrice" />
             </el-table>
           </template>
         </el-table-column>
-        <el-table-column prop="orderId" label="订单编号" align="left" width="120" />
-        <el-table-column prop="venderId" label="商家ID" />
-        <el-table-column prop="orderTime" label="订单时间" min-width="140" />
-        <el-table-column prop="venderCode" label="客户编码" width="100" />
-        <el-table-column prop="payType" label="付款方式" />
-        <el-table-column prop="totalMoney" label="总金额" />
-        <el-table-column prop="discount" label="优惠金额" />
-        <el-table-column prop="payMoney" label="支付金额" />
-        <el-table-column prop="companyName" label="买家公司名称" width="120" />
-        <el-table-column prop="pickName" label="收货人" />
-        <el-table-column prop="pickAddress" label="收货地址" width="200" />
-        <el-table-column prop="pickPhone" label="收货人电话" width="100" />
-        <el-table-column prop="orderState" label="订单状态" />
-        <el-table-column prop="orderState" label="平台优惠" />
-        <el-table-column prop="remark" label="备注" />
-        <el-table-column prop="freight" label="运费" width="60" />
-        <el-table-column label="操作" width="150px" align="center"></el-table-column>
+        <el-table-column prop="id" label="订单编号" align="left" width="60" />
+        <el-table-column prop="company" label="商家名称" />
+        <el-table-column prop="createdDate" label="建单时间" min-width="100" />
+        <el-table-column prop="productTotal" label="总金额" />
+        <el-table-column prop="invoiceDate" label="开单日期" />
+        <el-table-column prop="dispatchedDate" label="运输日期" width="100" />
+        <el-table-column prop="status" label="订单状态" />
+        <el-table-column prop="stage" label="订单阶段" />
+        <el-table-column prop="internalComments" label="备注" width="200" />
       </el-table>
       <!--分页组件-->
       <el-pagination
+        v-show="paginationFlag"
         :total="paginationData.total"
         style="margin-top: 8px;"
         layout="total, prev, pager, next, sizes"
+        :page-sizes="[1, 5, 10, 20]"
         @size-change="handleSizeChange"
         @current-change="handleCurrentChange"
         :page-size="paginationData.pagesize"
@@ -105,9 +136,46 @@ export default {
   name: 'ScrollBoard',
   data() {
     return {
-      flag: false,
+      pickerOptions: {
+        shortcuts: [
+          {
+            text: '最近一周',
+            onClick(picker) {
+              const end = new Date()
+              const start = new Date()
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 7)
+              picker.$emit('pick', [start, end])
+            }
+          },
+          {
+            text: '最近一个月',
+            onClick(picker) {
+              const end = new Date()
+              const start = new Date()
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 30)
+              picker.$emit('pick', [start, end])
+            }
+          },
+          {
+            text: '最近三个月',
+            onClick(picker) {
+              const end = new Date()
+              const start = new Date()
+              start.setTime(start.getTime() - 3600 * 1000 * 24 * 90)
+              picker.$emit('pick', [start, end])
+            }
+          }
+        ]
+      },
+      inputDatevalue: '',
+
+      pieChartFlag: false,
+      paginationFlag: false,
+      tableFlag: false,
+      longChartFlag: false,
+      barChartFlag: false,
       saledata: {},
-      inputData: { page: '2', rows: '10' },
+      inputData: { page: '2', rows: '100' },
       // 总数居
       totalData: [],
       // 获取的saleperson数据
@@ -145,39 +213,20 @@ export default {
       // 分页行数
       paginationData: {
         pagenum: 1,
-        total: '',
-        pagesize: 10
-      }
+        total: 0,
+        pagesize: 5
+      },
+      itemsDetail: []
     }
   },
   mounted() {},
   methods: {
-    handleSizeChange(newSize) {
-      // console.log(newSize)
-      this.queryInfo.pagesize = newSize
-      this.getSaleOrdersByDateAndPerson(
-        this.queryInfo.pagenum,
-        this.queryInfo.pagesize,
-        'SalesOrders',
-        this.clickId,
-        this.startDate,
-        this.endDate
-      )
-    },
-    handleCurrentChange(newPage) {
-      // console.log(newPage)
-      this.queryInfo.pagenum = newPage
-      this.getSaleOrdersByDateAndPerson(
-        this.queryInfo.pagenum,
-        this.queryInfo.pagesize,
-        'SalesOrders',
-        this.clickId,
-        this.startDate,
-        this.endDate
-      )
+    rowExpand(row, expandeRows) {
+      const _this = this
+      _this.itemsDetail = row.lineItems
     },
     // 获取数据的基础方法
-    getData(page, rows, dataType) {
+    getDataByNum(page, rows, dataType) {
       return new Promise((resolve, reject) => {
         let i = 1
         let newresult = []
@@ -230,78 +279,85 @@ export default {
       dataType,
       userID,
       startDate,
-      endDate,
-      isflat
+      endDate
+    ) {
+      return new Promise((resolve, reject) => {
+        this.reqCin7Service(
+          '/' +
+            dataType +
+            '?page=' +
+            page +
+            '&rows=' +
+            rows +
+            '&where=salesPersonId=' +
+            userID +
+            " and InvoiceDate>'" +
+            endDate +
+            "' and InvoiceDate<'" +
+            startDate +
+            "'",
+          requestOptions,
+          'get'
+        )
+          .then(result => {
+            this.totalDataByDateAndSales = result
+            resolve(result)
+          })
+          .catch(error => {
+            console.log(error.result)
+          })
+      })
+    },
+    getSaleOrdersByDateAndPersonFlat(
+      page,
+      rows,
+      dataType,
+      userID,
+      startDate,
+      endDate
     ) {
       return new Promise((resolve, reject) => {
         let i = 1
         let newresult = []
-        // let url
-        if (isflat) {
-          while (i <= page) {
-            try {
-              newresult.push(
-                this.reqCin7Service(
-                  '/' +
-                    dataType +
-                    '?page=' +
-                    i +
-                    '&rows=' +
-                    rows +
-                    '&where=salesPersonId=' +
-                    userID +
-                    " and InvoiceDate>'" +
-                    endDate +
-                    "' and InvoiceDate<'" +
-                    startDate +
-                    "'",
-                  requestOptions,
-                  'get'
-                )
-                  .then(result => {
-                    return result
-                  })
-                  .catch(error => {
-                    console.log(error.result)
-                  })
+        while (i <= page) {
+          try {
+            newresult.push(
+              this.reqCin7Service(
+                '/' +
+                  dataType +
+                  '?page=' +
+                  i +
+                  '&rows=' +
+                  rows +
+                  '&where=salesPersonId=' +
+                  userID +
+                  " and InvoiceDate>'" +
+                  endDate +
+                  "' and InvoiceDate<'" +
+                  startDate +
+                  "'",
+                requestOptions,
+                'get'
               )
-            } catch (error) {}
-            i += 1
-          }
-          Promise.all(newresult)
-            .then(result => {
-              resolve(result)
-              this.paginationData.total = result.length
-              return result.flat()
-            })
-            .catch(error => {
-              console.log(error.result)
-            })
-        } else {
-          this.reqCin7Service(
-            '/' +
-              dataType +
-              '?page=' +
-              i +
-              '&rows=' +
-              rows +
-              '&where=salesPersonId=' +
-              userID +
-              " and InvoiceDate>'" +
-              endDate +
-              "' and InvoiceDate<'" +
-              startDate +
-              "'",
-            requestOptions,
-            'get'
-          )
-            .then(result => {
-              return result
-            })
-            .catch(error => {
-              console.log(error.result)
-            })
+                .then(result => {
+                  return result
+                })
+                .catch(error => {
+                  console.log(error.result)
+                })
+            )
+          } catch (error) {}
+          i += 1
         }
+        Promise.all(newresult)
+          .then(result => {
+            resolve(result)
+            this.paginationData.total = result.length
+            return result.flat()
+          })
+          .catch(error => {
+            console.log(error.result)
+          })
       })
     },
     getProductsCatergories() {
@@ -317,7 +373,7 @@ export default {
       })
     },
     getProducts(page, rows) {
-      this.getData(page, rows, 'Products')
+      this.getDataByNum(page, rows, 'Products')
         .then(result => {
           this.products = result
           console.log(this.products)
@@ -329,10 +385,11 @@ export default {
     drawAllChart(page, rows) {
       this.drawLongChart(page, rows)
       this.drawBarChart(page, rows)
-      // this.drawPieChart()
+      this.longChartFlag = true
+      this.barChartFlag = true
     },
     drawLongChart(page, rows) {
-      this.getData(page, rows, 'SalesOrders').then(result => {
+      this.getDataByNum(page, rows, 'SalesOrders').then(result => {
         // this.totalData = []
         // for (var i = 1; i < result.length; i++) {
         //   this.totalData.push(result[i])
@@ -456,7 +513,7 @@ export default {
       })
     },
     drawBarChart(page, rows) {
-      this.getData(page, rows, 'SalesOrders').then(result => {
+      this.getDataByNum(page, rows, 'SalesOrders').then(result => {
         this.allSalesPerson = []
         // 最终展示销售量
         this.allSalesPersonTotal = []
@@ -566,7 +623,6 @@ export default {
             that.clickId = salesPersonTotal[xIndex[0]].nameItem
           }
         })
-        // 画出指定日期指定sales的饼图
       })
     },
     drawPieChart() {
@@ -585,8 +641,9 @@ export default {
       let userID = this.clickId
       let startDate = this.startDate
       let endDate = this.endDate
-      // 获取单个人指定时间内的销售详情
-      this.getSaleOrdersByDateAndPerson(
+      console.log(page, rows, userID, startDate, endDate)
+      // 获取单个人指定时间内的销售详情总数
+      this.getSaleOrdersByDateAndPersonFlat(
         page,
         rows,
         'SalesOrders',
@@ -594,38 +651,36 @@ export default {
         startDate,
         endDate
       ).then(result => {
-        // 获取单个人的指定日期内的所有数据整理
         this.totalDataByDateAndSalesFlat = result.flat()
-        // 获取单个人的指定日期内的所有数据
-        this.totalDataByDateAndSales = result
+        this.paginationData.total = result.flat().length
+        console.log(result.flat())
       })
       // 获取时间周期
       // eslint-disable-next-line no-unused-vars
       let dateInterval = 1
-      // 整理数据表格表格
-      let formByDateAndSales = []
-      for (
-        let index1 = 0;
-        index1 < this.totalDataByDateAndSales.length;
-        index1++
-      ) {
-        for (
-          let index2 = 0;
-          index2 < this.totalDataByDateAndSales[index1].lineItems.length;
-          index2++
-        ) {
-          const element = this.totalDataByDateAndSales[index1].lineItems[index2]
-          formByDateAndSales.push(
-            element.barcode,
-            element.name,
-            element.qty,
-            element.unitPrice,
-            element.createdDate
-          )
-        }
-      }
-      // 画出指定sales指定日期总表格表格
+      // 分成多少份
+      let start = new Date(startDate) // 开始时间
+      let end = new Date(endDate) // 结束时间
+      let newStartDate = new Date(start).getTime()
+      let newEndDate = new Date(end).getTime()
+      let dateDiff = Math.floor(
+        (newStartDate - newEndDate) / (24 * 3600 * 1000)
+      )
 
+      console.log(dateDiff)
+      // 画出指定sales指定日期总表格表格
+      this.getSaleOrdersByDateAndPerson(
+        this.paginationData.pagenum,
+        this.paginationData.pagesize,
+        'SalesOrders',
+        userID,
+        startDate,
+        endDate
+      ).then(result => {
+        // 获取单个人的指定日期内的所有数据整理
+        this.totalDataByDateAndSales = result
+        // 获取单个人的指定日期内的所有数据
+      })
       // 根据时间周期获取salestotal放到二维数组中
 
       let pieChart = this.$echarts.init(
@@ -692,7 +747,73 @@ export default {
         })
 
         pieChart.setOption(option)
-      })
+      }, 500)
+      this.tableFlag = true
+      this.paginationFlag = true
+      this.pieChartFlag = true
+    },
+    getTime(time) {
+      var date = new Date(time)
+      this.year = date.getFullYear()
+      this.month = date.getMonth() + 1
+      this.date = date.getDate()
+      this.hour = date.getHours() < 10 ? '0' + date.getHours() : date.getHours()
+      this.minute =
+        date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes()
+      this.second =
+        date.getSeconds() < 10 ? '0' + date.getSeconds() : date.getSeconds()
+      this.milliSeconds = date.getMilliseconds()
+      var currentTime =
+        this.year +
+        '-' +
+        this.month +
+        '-' +
+        this.date +
+        'T' +
+        this.hour +
+        ':' +
+        this.minute +
+        ':' +
+        this.second +
+        'Z'
+      return currentTime
+    },
+    drawAllChartByDate() {
+      console.log(this.getTime(this.inputDatevalue[0]))
+    },
+    handleSizeChange(newSize) {
+      this.paginationData.pagesize = newSize
+      console.log(this.paginationData.pagenum, this.paginationData.pagesize)
+      this.getSaleOrdersByDateAndPerson(
+        this.paginationData.pagenum,
+        this.paginationData.pagesize,
+        'SalesOrders',
+        this.clickId,
+        this.startDate,
+        this.endDate
+      )
+    },
+    handleCurrentChange(newPage) {
+      this.paginationData.pagenum = newPage
+      console.log(this.paginationData.pagenum, this.paginationData.pagesize)
+      this.getSaleOrdersByDateAndPerson(
+        this.paginationData.pagenum,
+        this.paginationData.pagesize,
+        'SalesOrders',
+        this.clickId,
+        this.startDate,
+        this.endDate
+      )
+    },
+    // 重置所有数据
+    reset() {
+      this.pieChartFlag = false
+      this.paginationFlag = false
+      this.barChartFlag = false
+      this.longChartFlag = false
+      this.tableFlag = false
+      this.inputData.page = 0
+      this.inputData.rows = 0
     }
   },
 
