@@ -1,7 +1,7 @@
 <template>
   <div id="scroll-board">
     <el-row>
-      <el-col :span="24">
+      <el-col :span="12">
         <div class="grid-content bg-purple-dark">
           <div class="block">
             <span class="demonstration"></span>
@@ -18,6 +18,17 @@
             <el-button size="large" @click="reset">重置</el-button>
           </div>
         </div>
+      </el-col>
+      <el-col :span="6">
+        <div class="sub-title">激活即列出输入建议</div>
+        <el-autocomplete
+          class="inline-input"
+          v-model="searchCategory"
+          :fetch-suggestions="querySearch"
+          placeholder="请输入内容"
+          @select="handleSelect"
+          value-key="element"
+        ></el-autocomplete>
       </el-col>
     </el-row>
     <el-row>
@@ -198,6 +209,9 @@ export default {
       newTotal: [],
       // 所有产品分类
       totalProductCategories: [],
+      // 搜索用的分类
+      productCategories: [],
+      searchCategory: '',
       // 按日期和sales搜索的所有数据整理
       totalDataByDateAndSalesFlat: [],
       // 按日期和sales搜索的所有数据
@@ -219,7 +233,9 @@ export default {
       itemsDetail: []
     }
   },
-  mounted() {},
+  mounted() {
+    this.totalProductCategories = this.loadAll()
+  },
   methods: {
     rowExpand(row, expandeRows) {
       const _this = this
@@ -360,18 +376,23 @@ export default {
           })
       })
     },
-    getProductsCatergories() {
-      return new Promise((resolve, reject) => {
-        this.reqCin7Service('/ProductCategories', requestOptions, 'get')
-          .then(result => {
-            resolve(result)
-            return result
-          })
-          .catch(error => {
-            console.log(error.result)
-          })
-      })
-    },
+    // getProductsCatergories() {
+    //   return new Promise((resolve, reject) => {
+    //     this.reqCin7Service(
+    //       '/ProductCategories?page=1&rows=250',
+    //       requestOptions,
+    //       'get'
+    //     )
+    //       .then(result => {
+    //         this.totalProductCategories = JSON.stringify(result)
+    //         resolve(result)
+    //         return this.totalProductCategories
+    //       })
+    //       .catch(error => {
+    //         console.log(error.result)
+    //       })
+    //   })
+    // },
     getProducts(page, rows) {
       this.getDataByNum(page, rows, 'Products')
         .then(result => {
@@ -627,15 +648,16 @@ export default {
     },
     drawPieChart() {
       // 获取所有的品牌组成二维数组
-      this.getProductsCatergories().then(result => {
-        let newProductCategorieslist = []
-        for (let index = 0; index < result.length; index++) {
-          let element = []
-          element.push(result[index].name)
-          newProductCategorieslist.push(element)
-        }
-        this.totalProductCategories = newProductCategorieslist
-      })
+      // this.getProductsCatergories().then(result => {
+      //   let newProductCategorieslist = []
+      //   for (let index = 0; index < result.length; index++) {
+      //     let element = []
+      //     element.push(result[index].name)
+      //     newProductCategorieslist.push(element)
+      //   }
+      //   this.totalProductCategories = newProductCategorieslist
+      //   console.log(this.totalProductCategories)
+      // })
       let page = this.inputData.page
       let rows = this.inputData.rows
       let userID = this.clickId
@@ -805,6 +827,64 @@ export default {
         this.endDate
       )
     },
+    querySearch(queryString, cb) {
+      var list = [{}]
+      this.reqCin7Service(
+        '/ProductCategories?page=1&rows=250',
+        requestOptions,
+        'get'
+      )
+        .then(result => {
+          let value = 'value'
+          let resultList = []
+          for (let index = 0; index < result.length; index++) {
+            const element = result[index].name
+            list.push({ value, element })
+            resultList.push(element)
+          }
+          this.totalProductCategories = resultList
+          var searchlist = list
+          var results = queryString
+            ? searchlist.filter(queryString)
+            : searchlist
+          console.log(list, results)
+          cb(results)
+        })
+        .catch(error => {
+          console.log(error.result)
+        })
+    },
+    // createFilter(queryString) {
+    //   return res => {
+    //     console.log(queryString)
+    //     return (
+    //       res.element.toLowerCase().indexOf(queryString.toLowerCase()) === 0
+    //     )
+    //   }
+    // },
+    loadAll() {
+      let list = []
+      let value = 'value'
+      this.reqCin7Service(
+        '/ProductCategories?page=1&rows=250',
+        requestOptions,
+        'get'
+      )
+        .then(result => {
+          for (let index = 0; index < result.length; index++) {
+            const element = result[index].name
+            list.push({ value, element })
+          }
+        })
+        .catch(error => {
+          console.log(error.result)
+        })
+      console.log(list)
+      return list
+    },
+    handleSelect(item) {
+      console.log(item)
+    },
     // 重置所有数据
     reset() {
       this.pieChartFlag = false
@@ -820,6 +900,7 @@ export default {
   computed: {},
   created: function() {
     this.getPerson()
+    // this.getProductsCatergories()
   }
 }
 </script>
