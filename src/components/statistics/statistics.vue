@@ -1,7 +1,7 @@
 <template>
   <div id="scroll-board">
     <el-row>
-      <el-col :span="12">
+      <el-col :span="24">
         <div class="grid-content bg-purple-dark">
           <div class="block">
             <span class="demonstration"></span>
@@ -14,21 +14,22 @@
               end-placeholder="结束日期"
               align="right"
             ></el-date-picker>
+            <el-autocomplete
+              class="inline-input"
+              v-model="searchCategory.detail"
+              :fetch-suggestions="querySearch"
+              placeholder="请输入查找的品牌"
+              @select="handleSelect"
+              @focus="searchProductsCatergories"
+              value-key="value"
+            ></el-autocomplete>
             <el-button size="large" icon="el-icon-search" @click="drawAllChartByDate()"></el-button>
             <el-button size="large" @click="reset">重置</el-button>
           </div>
         </div>
       </el-col>
       <el-col :span="6">
-        <div class="sub-title">激活即列出输入建议</div>
-        <el-autocomplete
-          class="inline-input"
-          v-model="searchCategory"
-          :fetch-suggestions="querySearch"
-          placeholder="请输入内容"
-          @select="handleSelect"
-          value-key="element"
-        ></el-autocomplete>
+        <!-- <div class="sub-title" style="font-size:16px">激活即列出输入建议</div> -->
       </el-col>
     </el-row>
     <el-row>
@@ -179,13 +180,13 @@ export default {
         ]
       },
       inputDatevalue: '',
-
+      // 各种显示控制
       pieChartFlag: false,
       paginationFlag: false,
       tableFlag: false,
       longChartFlag: false,
       barChartFlag: false,
-      saledata: {},
+      // saledata: {},
       inputData: { page: '2', rows: '100' },
       // 总数居
       totalData: [],
@@ -211,7 +212,6 @@ export default {
       totalProductCategories: [],
       // 搜索用的分类
       productCategories: [],
-      searchCategory: '',
       // 按日期和sales搜索的所有数据整理
       totalDataByDateAndSalesFlat: [],
       // 按日期和sales搜索的所有数据
@@ -230,11 +230,15 @@ export default {
         total: 0,
         pagesize: 5
       },
-      itemsDetail: []
+      // 表格子列详情
+      itemsDetail: [],
+      searchCategory: {
+        detail: ''
+      }
     }
   },
   mounted() {
-    this.totalProductCategories = this.loadAll()
+    // this.totalProductCategories = this.loadAll()
   },
   methods: {
     rowExpand(row, expandeRows) {
@@ -384,9 +388,7 @@ export default {
     //       'get'
     //     )
     //       .then(result => {
-    //         this.totalProductCategories = JSON.stringify(result)
     //         resolve(result)
-    //         return this.totalProductCategories
     //       })
     //       .catch(error => {
     //         console.log(error.result)
@@ -801,7 +803,10 @@ export default {
       return currentTime
     },
     drawAllChartByDate() {
-      console.log(this.getTime(this.inputDatevalue[0]))
+      console.log(
+        this.getTime(this.inputDatevalue[1]),
+        this.getTime(this.inputDatevalue[0])
+      )
     },
     handleSizeChange(newSize) {
       this.paginationData.pagesize = newSize
@@ -827,63 +832,37 @@ export default {
         this.endDate
       )
     },
-    querySearch(queryString, cb) {
-      var list = [{}]
+    searchProductsCatergories() {
       this.reqCin7Service(
         '/ProductCategories?page=1&rows=250',
         requestOptions,
         'get'
       )
         .then(result => {
-          let value = 'value'
-          let resultList = []
+          this.totalProductCategories = []
+          this.productCategories = result
           for (let index = 0; index < result.length; index++) {
-            const element = result[index].name
-            list.push({ value, element })
-            resultList.push(element)
+            const categoryName = result[index].name
+            const categoryId = result[index].id
+            const categoryParentId = result[index].parentId
+            this.totalProductCategories.push({
+              value: categoryName,
+              id: categoryId,
+              parentid: categoryParentId
+            })
+            // this.productCategories.push(categoryName)
           }
-          this.totalProductCategories = resultList
-          var searchlist = list
-          var results = queryString
-            ? searchlist.filter(queryString)
-            : searchlist
-          console.log(list, results)
-          cb(results)
         })
-        .catch(error => {
-          console.log(error.result)
+        .catch(err => {
+          console.log(err)
         })
     },
-    // createFilter(queryString) {
-    //   return res => {
-    //     console.log(queryString)
-    //     return (
-    //       res.element.toLowerCase().indexOf(queryString.toLowerCase()) === 0
-    //     )
-    //   }
-    // },
-    loadAll() {
-      let list = []
-      let value = 'value'
-      this.reqCin7Service(
-        '/ProductCategories?page=1&rows=250',
-        requestOptions,
-        'get'
-      )
-        .then(result => {
-          for (let index = 0; index < result.length; index++) {
-            const element = result[index].name
-            list.push({ value, element })
-          }
-        })
-        .catch(error => {
-          console.log(error.result)
-        })
-      console.log(list)
-      return list
+    querySearch(queryString, cb) {
+      var groupArr = this.totalProductCategories
+      cb(groupArr)
     },
     handleSelect(item) {
-      console.log(item)
+      console.log(item.id)
     },
     // 重置所有数据
     reset() {
@@ -894,13 +873,37 @@ export default {
       this.tableFlag = false
       this.inputData.page = 0
       this.inputData.rows = 0
+      this.totalProductCategories = ''
     }
   },
-
+  watch: {
+    'searchCategory.detail': {
+      handler: function(newVal, oldVal) {
+        // 这是定义好的用于存放下拉提醒框中数据的数组
+        this.totalProductCategories = []
+        var len = this.productCategories.length
+        var arr = []
+        for (var i = 0; i < len; i++) {
+          // 根据输入框中的值进行模糊匹配
+          if (
+            this.productCategories[i].name
+              .toLowerCase()
+              .indexOf(this.searchCategory.detail.toLowerCase()) >= 0
+          ) {
+            arr.push({
+              value: this.productCategories[i].name,
+              id: this.productCategories[i].id,
+              parentid: this.productCategories[i].parentid
+            })
+          }
+        }
+        this.totalProductCategories = arr
+      }
+    }
+  },
   computed: {},
   created: function() {
     this.getPerson()
-    // this.getProductsCatergories()
   }
 }
 </script>
