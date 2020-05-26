@@ -212,6 +212,8 @@ export default {
       totalProductCategories: [],
       // 搜索用的分类
       productCategories: [],
+      // 选择的分类
+      selectedCategoryId: [],
       // 按日期和sales搜索的所有数据整理
       totalDataByDateAndSalesFlat: [],
       // 按日期和sales搜索的所有数据
@@ -805,8 +807,26 @@ export default {
     drawAllChartByDate() {
       console.log(
         this.getTime(this.inputDatevalue[1]),
-        this.getTime(this.inputDatevalue[0])
+        this.getTime(this.inputDatevalue[0]),
+        this.selectedCategoryId
       )
+      let page = 1
+      let rows = 250
+      this.reqCin7Service(
+        '/SalesOrders?page=' +
+          page +
+          '&rows=' +
+          rows +
+          '& InvoiceDate>' +
+          this.inputDatevalue[0] +
+          "' and InvoiceDate<'" +
+          this.inputDatevalue[1] +
+          "'",
+        requestOptions,
+        'get'
+      ).then(result => {
+        console.log(result)
+      })
     },
     handleSizeChange(newSize) {
       this.paginationData.pagesize = newSize
@@ -850,7 +870,6 @@ export default {
               id: categoryId,
               parentid: categoryParentId
             })
-            // this.productCategories.push(categoryName)
           }
         })
         .catch(err => {
@@ -862,6 +881,7 @@ export default {
       cb(groupArr)
     },
     handleSelect(item) {
+      this.selectedCategoryId = item.id
       console.log(item.id)
     },
     // 重置所有数据
