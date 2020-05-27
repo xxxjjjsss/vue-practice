@@ -236,7 +236,9 @@ export default {
       itemsDetail: [],
       searchCategory: {
         detail: ''
-      }
+      },
+      // 只按照时间搜索的所有订单
+      searchBydateResult: []
     }
   },
   mounted() {
@@ -805,27 +807,79 @@ export default {
       return currentTime
     },
     drawAllChartByDate() {
-      console.log(
-        this.getTime(this.inputDatevalue[1]),
-        this.getTime(this.inputDatevalue[0]),
-        this.selectedCategoryId
+      this.endDate = this.getTime(this.inputDatevalue[1]).replace(
+        /\b(\w)\b/g,
+        '0$1'
       )
-      let page = 1
-      let rows = 250
-      this.reqCin7Service(
-        '/SalesOrders?page=' +
-          page +
-          '&rows=' +
-          rows +
-          '& InvoiceDate>' +
-          this.inputDatevalue[0] +
-          "' and InvoiceDate<'" +
-          this.inputDatevalue[1] +
-          "'",
-        requestOptions,
-        'get'
-      ).then(result => {
-        console.log(result)
+      this.startDate = this.getTime(this.inputDatevalue[0]).replace(
+        /\b(\w)\b/g,
+        '0$1'
+      )
+      let that = this
+      async function asyncWhile() {
+        let page = 1
+        let rows = 100
+        let searchBydate = []
+        while (page <= 5) {
+          const result = await that.reqCin7Service(
+            '/SalesOrders?page=' +
+              page +
+              '&rows=' +
+              rows +
+              '&where=InvoiceDate>' +
+              that.startDate +
+              "' and InvoiceDate<'" +
+              that.endDate +
+              "'",
+            requestOptions,
+            'get'
+          )
+          searchBydate.push(result)
+          if (result.length === 0) {
+            break
+          }
+          page += 1
+        }
+        that.searchBydateResult = searchBydate.flat()
+
+        let itemList = []
+        for (let index = 0; index < that.searchBydateResult.length; index++) {
+          const lineItems = that.searchBydateResult[index].lineItems
+          const orderId = that.searchBydateResult[index].id
+          const orderSalesId = that.searchBydateResult[index].salesPersonId
+          let item = []
+          for (let index = 0; index < lineItems.length; index++) {
+            const lineitem = lineItems[index].productId
+            const qty = lineItems[index].qty
+            item.push({
+              lineitem: lineitem,
+              orderid: orderId,
+              ordersalesid: orderSalesId,
+              value: qty
+            })
+          }
+          itemList.push(item)
+        }
+        var countTotal = []
+        var nameContainer = {}
+        itemList.flat().forEach(item => {
+          nameContainer[item.lineitem] = nameContainer[item.lineitem] || []
+          nameContainer[item.lineitem].push(item)
+        })
+        var itemId = Object.keys(nameContainer)
+        itemId.forEach(nameItem => {
+          let count = 0
+          nameContainer[nameItem].forEach(item => {
+            count += item.value
+          })
+          countTotal.push({ name: nameItem, total: count })
+        })
+        console.log(countTotal)
+      }
+      asyncWhile().catch(e => {
+        console.log(
+          'There has been a problem with your fetch operation: ' + e.message
+        )
       })
     },
     handleSizeChange(newSize) {
@@ -859,13 +913,13 @@ export default {
         'get'
       )
         .then(result => {
-          this.totalProductCategories = []
-          this.productCategories = result
+          this.totalProductCategories = result
+          this.productCategories = []
           for (let index = 0; index < result.length; index++) {
             const categoryName = result[index].name
             const categoryId = result[index].id
             const categoryParentId = result[index].parentId
-            this.totalProductCategories.push({
+            this.productCategories.push({
               value: categoryName,
               id: categoryId,
               parentid: categoryParentId
@@ -877,7 +931,7 @@ export default {
         })
     },
     querySearch(queryString, cb) {
-      var groupArr = this.totalProductCategories
+      var groupArr = this.productCategories
       cb(groupArr)
     },
     handleSelect(item) {
@@ -893,31 +947,31 @@ export default {
       this.tableFlag = false
       this.inputData.page = 0
       this.inputData.rows = 0
-      this.totalProductCategories = ''
+      this.productCategories = []
     }
   },
   watch: {
     'searchCategory.detail': {
       handler: function(newVal, oldVal) {
         // 这是定义好的用于存放下拉提醒框中数据的数组
-        this.totalProductCategories = []
-        var len = this.productCategories.length
+        this.productCategories = []
+        var len = this.totalProductCategories.length
         var arr = []
         for (var i = 0; i < len; i++) {
           // 根据输入框中的值进行模糊匹配
           if (
-            this.productCategories[i].name
+            this.totalProductCategories[i].name
               .toLowerCase()
               .indexOf(this.searchCategory.detail.toLowerCase()) >= 0
           ) {
             arr.push({
-              value: this.productCategories[i].name,
-              id: this.productCategories[i].id,
-              parentid: this.productCategories[i].parentid
+              value: this.totalProductCategories[i].name,
+              id: this.totalProductCategories[i].id,
+              parentid: this.totalProductCategories[i].parentid
             })
           }
         }
-        this.totalProductCategories = arr
+        this.productCategories = arr
       }
     }
   },
