@@ -17,12 +17,21 @@
             <el-autocomplete
               class="inline-input"
               v-model="searchCategory.detail"
-              :fetch-suggestions="querySearch"
+              :fetch-suggestions="categoriesSearch"
               placeholder="请输入查找的品牌"
-              @select="handleSelect"
+              @select="handleSelectCategories"
               @focus="searchProductsCatergories"
               value-key="value"
             ></el-autocomplete>
+            <!-- <el-autocomplete
+              class="inline-input"
+              v-model="searchCategory.detail"
+              :fetch-suggestions="productSearch"
+              placeholder="请输入查找的品牌"
+              @select
+              @focus
+              value-key="value"
+            ></el-autocomplete>-->
             <el-button size="large" icon="el-icon-search" @click="drawAllChartByDate()"></el-button>
             <el-button size="large" @click="reset">重置</el-button>
           </div>
@@ -67,6 +76,48 @@
             </span>
           </span>
         </div>
+        <!-- <div>
+          <el-table
+            v-show="tableByDateAndBrandFlag"
+            :data="totalDataByDateAndBrand"
+            size="small"
+            border
+            style="width: 100%;"
+            @expand-change="rowExpand"
+          >
+            <el-table-column type="expand" prop>
+              <template slot-scope>
+                <el-table :data="itemsByDateAndBrandDetail">
+                  <el-table-column label="产品ID" prop="productId" />
+                  <el-table-column label="产品名" prop="name" />
+                  <el-table-column label="条形码" prop="barcode" />
+                  <el-table-column label="折扣" prop="discount" />
+                  <el-table-column label="运输数量" prop="qtyShipped" />
+                  <el-table-column label="单价" prop="unitPrice" />
+                </el-table>
+              </template>
+            </el-table-column>
+            <el-table-column prop="id" label="订单编号" align="left" width="60" />
+            <el-table-column prop="company" label="商家名称" />
+            <el-table-column prop="createdDate" label="建单时间" min-width="100" />
+            <el-table-column prop="productTotal" label="总金额" />
+            <el-table-column prop="invoiceDate" label="开单日期" />
+            <el-table-column prop="dispatchedDate" label="运输日期" width="100" />
+            <el-table-column prop="status" label="订单状态" />
+            <el-table-column prop="stage" label="订单阶段" />
+            <el-table-column prop="internalComments" label="备注" width="200" />
+          </el-table>
+          <el-pagination
+            v-show="paginationByDateAndBrandFlag"
+            :total="paginationByDateAndBrandData.total"
+            style="margin-top: 8px;"
+            layout="total, prev, pager, next, sizes"
+            :page-sizes="[1, 5, 10, 20]"
+            @size-change="handleSizeChangeByDateAndSales"
+            @current-change="handleCurrentChangeByDateAndSales"
+            :page-size="paginationByDateAndSalesData.pagesize"
+          />
+        </div>-->
       </el-col>
     </el-row>
 
@@ -90,7 +141,7 @@
     <div id="saleItemDetal" v-show="pieChartFlag" style="width:16em;height:400px;"></div>
     <div>
       <el-table
-        v-show="tableFlag"
+        v-show="tableByDateAndSalesFlag"
         :data="totalDataByDateAndSales"
         size="small"
         border
@@ -99,7 +150,7 @@
       >
         <el-table-column type="expand" prop>
           <template slot-scope>
-            <el-table :data="itemsDetail">
+            <el-table :data="itemsByDateAndSalesDetail">
               <el-table-column label="产品ID" prop="productId" />
               <el-table-column label="产品名" prop="name" />
               <el-table-column label="条形码" prop="barcode" />
@@ -121,14 +172,14 @@
       </el-table>
       <!--分页组件-->
       <el-pagination
-        v-show="paginationFlag"
-        :total="paginationData.total"
+        v-show="paginationByDateAndSalesFlag"
+        :total="paginationByDateAndSalesData.total"
         style="margin-top: 8px;"
         layout="total, prev, pager, next, sizes"
         :page-sizes="[1, 5, 10, 20]"
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-        :page-size="paginationData.pagesize"
+        @size-change="handleSizeChangeByDateAndSales"
+        @current-change="handleCurrentChangeByDateAndSales"
+        :page-size="paginationByDateAndSalesData.pagesize"
       />
     </div>
   </div>
@@ -182,8 +233,10 @@ export default {
       inputDatevalue: '',
       // 各种显示控制
       pieChartFlag: false,
-      paginationFlag: false,
-      tableFlag: false,
+      paginationByDateAndSalesFlag: false,
+      paginationByDateAndBrandFlag: false,
+      tableByDateAndSalesFlag: false,
+      tableByDateAndBrandFlag: false,
       longChartFlag: false,
       barChartFlag: false,
       // saledata: {},
@@ -218,6 +271,8 @@ export default {
       totalDataByDateAndSalesFlat: [],
       // 按日期和sales搜索的所有数据
       totalDataByDateAndSales: [],
+      // 按日期和品牌搜索的所有数据
+      totalDataByDateAndBrand: [],
       // 长时间图的起始时间和结束时间
       startDate: '',
       endDate: '',
@@ -227,14 +282,23 @@ export default {
       clickId: '',
       // 分页页码
       // 分页行数
-      paginationData: {
+      paginationByDateAndBrandData: {
+        pagenum: 1,
+        total: 0,
+        pagesize: 5
+      },
+      paginationByDateAndSalesData: {
         pagenum: 1,
         total: 0,
         pagesize: 5
       },
       // 表格子列详情
-      itemsDetail: [],
+      itemsByDateAndSalesDetail: [],
+      itemsByDateAndBrandDetail: [],
       searchCategory: {
+        detail: ''
+      },
+      searchProduct: {
         detail: ''
       },
       // 只按照时间搜索的所有订单
@@ -247,7 +311,7 @@ export default {
   methods: {
     rowExpand(row, expandeRows) {
       const _this = this
-      _this.itemsDetail = row.lineItems
+      _this.itemsByDateAndSalesDetail = row.lineItems
     },
     // 获取数据的基础方法
     getDataByNum(page, rows, dataType) {
@@ -296,7 +360,7 @@ export default {
           })
       })
     },
-    // 获取指定日期内指定ID的所有数据
+    // 获取指定dispatch日期内指定ID的所有数据
     getSaleOrdersByDateAndPerson(
       page,
       rows,
@@ -315,9 +379,9 @@ export default {
             rows +
             '&where=salesPersonId=' +
             userID +
-            " and InvoiceDate>'" +
+            " and DispatchedDate>'" +
             endDate +
-            "' and InvoiceDate<'" +
+            "' and DispatchedDate<'" +
             startDate +
             "'",
           requestOptions,
@@ -332,7 +396,7 @@ export default {
           })
       })
     },
-    getSaleOrdersByDateAndPersonFlat(
+    getSaleOrdersByDispatchDateAndPersonFlat(
       page,
       rows,
       dataType,
@@ -355,9 +419,9 @@ export default {
                   rows +
                   '&where=salesPersonId=' +
                   userID +
-                  " and InvoiceDate>'" +
+                  " and DispatchedDate>'" +
                   endDate +
-                  "' and InvoiceDate<'" +
+                  "' and DispatchedDate<'" +
                   startDate +
                   "'",
                 requestOptions,
@@ -376,7 +440,7 @@ export default {
         Promise.all(newresult)
           .then(result => {
             resolve(result)
-            this.paginationData.total = result.length
+            this.paginationByDateAndSalesData.total = result.length
             return result.flat()
           })
           .catch(error => {
@@ -536,6 +600,7 @@ export default {
             (sd.getTime() - ed.getTime()) / (24 * 3600 * 1000)
           )
           that.dayDiff = dayDiff
+          console.log(that.getRealTime(ed))
         })
       })
     },
@@ -671,7 +736,7 @@ export default {
       let endDate = this.endDate
       console.log(page, rows, userID, startDate, endDate)
       // 获取单个人指定时间内的销售详情总数
-      this.getSaleOrdersByDateAndPersonFlat(
+      this.getSaleOrdersByDispatchDateAndPersonFlat(
         page,
         rows,
         'SalesOrders',
@@ -680,7 +745,7 @@ export default {
         endDate
       ).then(result => {
         this.totalDataByDateAndSalesFlat = result.flat()
-        this.paginationData.total = result.flat().length
+        this.paginationByDateAndSalesData.total = result.flat().length
         console.log(result.flat())
       })
       // 获取时间周期
@@ -694,12 +759,18 @@ export default {
       let dateDiff = Math.floor(
         (newStartDate - newEndDate) / (24 * 3600 * 1000)
       )
-
       console.log(dateDiff)
+      let charDatelist = ['product', this.getRealTime(newEndDate)]
+      let chartdate = newEndDate
+      for (let index = 0; index < dateDiff; index++) {
+        chartdate = chartdate + 24 * 3600 * 1000
+        charDatelist.push(this.getRealTime(chartdate))
+      }
+      console.log(charDatelist)
       // 画出指定sales指定日期总表格表格
       this.getSaleOrdersByDateAndPerson(
-        this.paginationData.pagenum,
-        this.paginationData.pagesize,
+        this.paginationByDateAndSalesData.pagenum,
+        this.paginationByDateAndSalesData.pagesize,
         'SalesOrders',
         userID,
         startDate,
@@ -723,7 +794,7 @@ export default {
           },
           dataset: {
             source: [
-              ['product', '2012', '2013', '2014', '2015', '2016', '2017'],
+              charDatelist,
               ['Matcha Latte', 41.1, 30.4, 65.1, 53.3, 83.8, 98.7],
               ['Milk Tea', 86.5, 92.1, 85.7, 83.1, 73.4, 55.1],
               ['Cheese Cocoa', 24.1, 67.2, 79.5, 86.4, 65.2, 82.5],
@@ -776,11 +847,11 @@ export default {
 
         pieChart.setOption(option)
       }, 500)
-      this.tableFlag = true
-      this.paginationFlag = true
+      this.tableByDateAndSalesFlag = true
+      this.paginationByDateAndSalesFlag = true
       this.pieChartFlag = true
     },
-    getTime(time) {
+    getRealTime(time) {
       var date = new Date(time)
       this.year = date.getFullYear()
       this.month = date.getMonth() + 1
@@ -807,14 +878,37 @@ export default {
       return currentTime
     },
     drawAllChartByDate() {
-      this.endDate = this.getTime(this.inputDatevalue[1]).replace(
-        /\b(\w)\b/g,
-        '0$1'
-      )
-      this.startDate = this.getTime(this.inputDatevalue[0]).replace(
-        /\b(\w)\b/g,
-        '0$1'
-      )
+      function Appendzero(obj) {
+        if (obj < 10) return '0' + '' + obj
+        else return obj
+      }
+      function getDateWeek(newtime) {
+        const newdate = new Date(newtime)
+        var year = newdate.getFullYear()
+        var month = newdate.getMonth() + 1
+        var date = newdate.getDate()
+        var hour = newdate.getHours()
+        var min = newdate.getMinutes()
+        var sec = newdate.getSeconds()
+
+        var s =
+          year +
+          '-' +
+          Appendzero(month) +
+          '-' +
+          Appendzero(date) +
+          'T' +
+          Appendzero(hour) +
+          ':' +
+          Appendzero(min) +
+          ':' +
+          Appendzero(sec) +
+          'Z'
+        return s
+      }
+
+      this.endDate = getDateWeek(this.inputDatevalue[1])
+      this.startDate = getDateWeek(this.inputDatevalue[0])
       let that = this
       async function asyncWhile() {
         let page = 1
@@ -826,9 +920,9 @@ export default {
               page +
               '&rows=' +
               rows +
-              '&where=InvoiceDate>' +
+              '&where=DispatchedDate>' +
               that.startDate +
-              "' and InvoiceDate<'" +
+              "' and DispatchedDate<'" +
               that.endDate +
               "'",
             requestOptions,
@@ -840,8 +934,9 @@ export default {
           }
           page += 1
         }
+        // 储存按日期搜索结果
         that.searchBydateResult = searchBydate.flat()
-
+        // 存放订单详情数组,商品id,订单id,销售id,订单数量
         let itemList = []
         for (let index = 0; index < that.searchBydateResult.length; index++) {
           const lineItems = that.searchBydateResult[index].lineItems
@@ -855,26 +950,37 @@ export default {
               lineitem: lineitem,
               orderid: orderId,
               ordersalesid: orderSalesId,
-              value: qty
+              qty: qty
             })
           }
           itemList.push(item)
         }
         var countTotal = []
         var nameContainer = {}
+        // 新增列表,如果没有就放进去
         itemList.flat().forEach(item => {
           nameContainer[item.lineitem] = nameContainer[item.lineitem] || []
           nameContainer[item.lineitem].push(item)
         })
+        console.log(nameContainer)
+        // 获取数列的key
         var itemId = Object.keys(nameContainer)
+        // 把每行的ID当参数
         itemId.forEach(nameItem => {
           let count = 0
+          // 把每个ID当参数
           nameContainer[nameItem].forEach(item => {
-            count += item.value
+            // 数量累加
+            count += item.qty
           })
           countTotal.push({ name: nameItem, total: count })
         })
-        console.log(countTotal)
+        let countTotalAll = 0
+        for (let index = 0; index < countTotal.length; index++) {
+          let element = countTotal[index]['total']
+          countTotalAll += element
+        }
+        console.log(countTotalAll)
       }
       asyncWhile().catch(e => {
         console.log(
@@ -882,24 +988,30 @@ export default {
         )
       })
     },
-    handleSizeChange(newSize) {
-      this.paginationData.pagesize = newSize
-      console.log(this.paginationData.pagenum, this.paginationData.pagesize)
+    handleSizeChangeByDateAndSales(newSize) {
+      this.paginationByDateAndSalesData.pagesize = newSize
+      console.log(
+        this.paginationByDateAndSalesData.pagenum,
+        this.paginationByDateAndSalesData.pagesize
+      )
       this.getSaleOrdersByDateAndPerson(
-        this.paginationData.pagenum,
-        this.paginationData.pagesize,
+        this.paginationByDateAndSalesData.pagenum,
+        this.paginationByDateAndSalesData.pagesize,
         'SalesOrders',
         this.clickId,
         this.startDate,
         this.endDate
       )
     },
-    handleCurrentChange(newPage) {
-      this.paginationData.pagenum = newPage
-      console.log(this.paginationData.pagenum, this.paginationData.pagesize)
+    handleCurrentChangeByDateAndSales(newPage) {
+      this.paginationByDateAndSalesData.pagenum = newPage
+      console.log(
+        this.paginationByDateAndSalesData.pagenum,
+        this.paginationByDateAndSalesData.pagesize
+      )
       this.getSaleOrdersByDateAndPerson(
-        this.paginationData.pagenum,
-        this.paginationData.pagesize,
+        this.paginationByDateAndSalesData.pagenum,
+        this.paginationByDateAndSalesData.pagesize,
         'SalesOrders',
         this.clickId,
         this.startDate,
@@ -930,21 +1042,25 @@ export default {
           console.log(err)
         })
     },
-    querySearch(queryString, cb) {
+    categoriesSearch(queryString, cb) {
       var groupArr = this.productCategories
       cb(groupArr)
     },
-    handleSelect(item) {
+    productSearch(queryString, cb) {
+      var groupArr = this.productCategories
+      cb(groupArr)
+    },
+    handleSelectCategories(item) {
       this.selectedCategoryId = item.id
       console.log(item.id)
     },
     // 重置所有数据
     reset() {
       this.pieChartFlag = false
-      this.paginationFlag = false
+      this.paginationByDateAndSalesFlag = false
       this.barChartFlag = false
       this.longChartFlag = false
-      this.tableFlag = false
+      this.tableByDateAndSalesFlag = false
       this.inputData.page = 0
       this.inputData.rows = 0
       this.productCategories = []

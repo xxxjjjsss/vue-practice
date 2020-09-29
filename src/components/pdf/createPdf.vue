@@ -24,10 +24,9 @@
 
 <script>
 import JsBarcode from 'JsBarcode'
-// import qrcode from 'qrcode'
 export default {
   name: 'test',
-  data() {
+  data: function() {
     return {
       printInfo: [
         {
