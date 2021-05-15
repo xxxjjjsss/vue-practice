@@ -4,7 +4,7 @@
       <el-header>
         <div class="home-header">
           <img class="home-logo" src="../../assets/img/LOGO1.jpg" alt="home" />
-          <span>后台管理</span>
+          <span>backend management</span>
         </div>
         <el-button type="info" @click="logout">退出</el-button>
       </el-header>
