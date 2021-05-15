@@ -1,6 +1,10 @@
 # sell
 
-> A Vue.js project
+> A Vue.js practice project.
+
+it is a backend management site which connect to a wordpress site through api.
+it already have a page for editing users, including create new user, filter by roles, delete user.
+I also build a page to connect to cin7 to get some data to show using e-chart.some charts are interactive to show different result.
 
 ## Build Setup
 
